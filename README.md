@@ -11,9 +11,9 @@
 
 ## Installation Guide
 1. Clone the repository:  
-   git clone (link will change w/ repo change)
+  ``` git clone https://github.com/amelia720/Con_Dev_Contagion_Project.git```
 2. Navigate to folder:   
-   
+   ```cd Con_Dev_Contagion_Project```
 
 ## Authors
 
