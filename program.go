@@ -1,6 +1,7 @@
-package condevcontagionproject
+package main
 
 import (
+	rg "github.com/gen2brain/raylib-go/raygui"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -16,13 +17,12 @@ func main() {
 	rl.InitWindow(1100, 700, "raylib [core] example - basic window")
 	defer rl.CloseWindow()
 
-	rl.SetTargetFPS(60)
-
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 
+		rg.Button(bounds, "text")
+
 		rl.ClearBackground(rl.RayWhite)
-		rl.DrawRectangleLinesEx(bounds, 2, rl.Blue)
 
 		rl.EndDrawing()
 	}
