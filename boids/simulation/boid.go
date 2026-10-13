@@ -1,4 +1,4 @@
-package main
+package simulation
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -9,14 +9,14 @@ type GridCell struct {
 }
 
 type Boid struct {
-	position rl.Vector2
-	velocity rl.Vector2
-	gridCell GridCell
+	Position rl.Vector2
+	Velocity rl.Vector2
+	GridCell GridCell
 }
 
 type NearbyBoid struct {
-	boid     *Boid
-	distance float32
+	Boid     *Boid
+	Distance float32
 }
 
 // Steer towards the average position of nearby boids.
@@ -28,20 +28,20 @@ func boidCohesion(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	}
 
 	for _, n := range nearby {
-		center = rl.Vector2Add(center, n.boid.position)
+		center = rl.Vector2Add(center, n.Boid.Position)
 	}
 
 	center = rl.Vector2Scale(center, 1.0/float32(len(nearby)))
-	desiredVelocity := rl.Vector2Subtract(center, b.position)
+	desiredVelocity := rl.Vector2Subtract(center, b.Position)
 
 	if desiredVelocity.Length() > 0 {
 		desiredVelocity = rl.Vector2Scale(
 			rl.Vector2Normalize(desiredVelocity),
-			maxSpeed,
+			MaxSpeed,
 		)
 	}
 
-	return rl.Vector2Subtract(desiredVelocity, b.velocity)
+	return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 }
 
 // Steer away from nearby boids that are too close.
@@ -50,14 +50,14 @@ func boidSeparation(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	count := 0
 
 	for _, n := range nearby {
-		distance := n.distance
+		distance := n.Distance
 
 		// Coincident boids have no well-defined separation direction.
-		if distance <= 0.001 || distance >= desiredSeparation {
+		if distance <= 0.001 || distance >= DesiredSeparation {
 			continue
 		}
 
-		difference := rl.Vector2Subtract(b.position, n.boid.position)
+		difference := rl.Vector2Subtract(b.Position, n.Boid.Position)
 		difference = rl.Vector2Scale(
 			rl.Vector2Normalize(difference),
 			1.0/distance,
@@ -76,9 +76,9 @@ func boidSeparation(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	if steer.Length() > 0 {
 		desiredVelocity := rl.Vector2Scale(
 			rl.Vector2Normalize(steer),
-			maxSpeed,
+			MaxSpeed,
 		)
-		return rl.Vector2Subtract(desiredVelocity, b.velocity)
+		return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 	}
 
 	return rl.Vector2Zero()
@@ -93,7 +93,7 @@ func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	avgVelocity := rl.Vector2Zero()
 
 	for _, n := range nearby {
-		avgVelocity = rl.Vector2Add(avgVelocity, n.boid.velocity)
+		avgVelocity = rl.Vector2Add(avgVelocity, n.Boid.Velocity)
 	}
 
 	avgVelocity = rl.Vector2Scale(
@@ -107,13 +107,13 @@ func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 
 	desiredVelocity := rl.Vector2Scale(
 		rl.Vector2Normalize(avgVelocity),
-		maxSpeed,
+		MaxSpeed,
 	)
 
-	return rl.Vector2Subtract(desiredVelocity, b.velocity)
+	return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 }
 
-func boidAction(b *Boid) {
+func BoidAction(b *Boid) {
 	nearby := getNearbyBoids(b)
 
 	cohesion := boidCohesion(b, nearby)
@@ -121,69 +121,69 @@ func boidAction(b *Boid) {
 	alignment := boidAlignment(b, nearby)
 
 	steering := rl.Vector2Add(
-		rl.Vector2Scale(cohesion, cohesionValue),
+		rl.Vector2Scale(cohesion, CohesionValue),
 		rl.Vector2Add(
-			rl.Vector2Scale(separation, separationValue),
-			rl.Vector2Scale(alignment, alignmentValue),
+			rl.Vector2Scale(separation, SeparationValue),
+			rl.Vector2Scale(alignment, AlignmentValue),
 		),
 	)
 
-	steering = limitVector(steering, maxForce)
+	steering = limitVector(steering, MaxForce)
 
 	dt := rl.GetFrameTime()
 
-	b.velocity = rl.Vector2Add(
-		b.velocity,
+	b.Velocity = rl.Vector2Add(
+		b.Velocity,
 		rl.Vector2Scale(steering, dt),
 	)
-	b.velocity = limitVector(b.velocity, maxSpeed)
+	b.Velocity = limitVector(b.Velocity, MaxSpeed)
 
-	b.position = rl.Vector2Add(
-		b.position,
-		rl.Vector2Scale(b.velocity, dt),
+	b.Position = rl.Vector2Add(
+		b.Position,
+		rl.Vector2Scale(b.Velocity, dt),
 	)
 
-	if b.position.X < 0.0 {
-		b.position.X += bounds.Width
-	} else if b.position.X > bounds.Width {
-		b.position.X -= bounds.Width
+	if b.Position.X < 0.0 {
+		b.Position.X += Bounds.Width
+	} else if b.Position.X > Bounds.Width {
+		b.Position.X -= Bounds.Width
 	}
-	if b.position.Y < 0.0 {
-		b.position.Y += bounds.Height
-	} else if b.position.Y > bounds.Height {
-		b.position.Y -= bounds.Height
+	if b.Position.Y < 0.0 {
+		b.Position.Y += Bounds.Height
+	} else if b.Position.Y > Bounds.Height {
+		b.Position.Y -= Bounds.Height
 	}
 
-	if doGridOptimize {
+	if DoGridOptimize {
 		updateBoidGrid(b)
 	}
 }
 
 func updateBoidGrid(b *Boid) {
-	b.gridCell.X = floorDiv(b.position.X, detectionRange)
-	b.gridCell.Y = floorDiv(b.position.Y, detectionRange)
+	b.GridCell.X = floorDiv(b.Position.X, DetectionRange)
+	b.GridCell.Y = floorDiv(b.Position.Y, DetectionRange)
 }
 
 func getNearbyBoids(b *Boid) []*NearbyBoid {
 	nearbyBoids := []*NearbyBoid{}
 
-	for _, other := range boids {
+	for _, other := range Boids {
 		if other == b {
 			continue
 		}
 
-		diffX := b.gridCell.X - other.gridCell.X
-		diffY := b.gridCell.Y - other.gridCell.Y
-		if (diffX < -1 || diffX > 1 || diffY < -1 || diffY > 1) && doGridOptimize {
+		diffX := b.GridCell.X - other.GridCell.X
+		diffY := b.GridCell.Y - other.GridCell.Y
+		if (diffX < -1 || diffX > 1 || diffY < -1 || diffY > 1) && DoGridOptimize {
 			continue
 		}
 
-		distance := rl.Vector2Distance(b.position, other.position)
+		distance := rl.Vector2Distance(b.Position, other.Position)
 
-		if distance < detectionRange {
+		if distance < DetectionRange {
 			nearbyBoids = append(nearbyBoids, &NearbyBoid{
-				boid:     other,
-				distance: distance,
+				Boid:     other,
+				Distance: distance,
 			})
 		}
 	}
@@ -193,21 +193,21 @@ func getNearbyBoids(b *Boid) []*NearbyBoid {
 
 var lineLength float32 = 24.0
 
-func drawBoid(b *Boid, highlight bool) {
+func DrawBoid(b *Boid, highlight bool) {
 	col := rl.Blue
 	if highlight {
 		col = rl.Red
 	}
-	vel := rl.Vector2Normalize(b.velocity)
+	vel := rl.Vector2Normalize(b.Velocity)
 	if highlight {
-		rl.DrawCircleLines(int32(b.position.X), int32(b.position.Y), detectionRange, rl.LightGray)
+		rl.DrawCircleLines(int32(b.Position.X), int32(b.Position.Y), DetectionRange, rl.LightGray)
 	}
-	rl.DrawLine(int32(b.position.X), int32(b.position.Y), int32(b.position.X+vel.X*lineLength), int32(b.position.Y+vel.Y*lineLength), rl.LightGray)
+	rl.DrawLine(int32(b.Position.X), int32(b.Position.Y), int32(b.Position.X+vel.X*lineLength), int32(b.Position.Y+vel.Y*lineLength), rl.LightGray)
 	rl.DrawPoly(
-		b.position,
+		b.Position,
 		3,
 		6,
-		rl.Vector2Angle(right2d, b.velocity)*rl.Rad2deg,
+		rl.Vector2Angle(right2d, b.Velocity)*rl.Rad2deg,
 		col,
 	)
 }

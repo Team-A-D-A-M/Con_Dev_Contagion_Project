@@ -1,4 +1,4 @@
-package main
+package simulation
 
 import (
 	"math"
@@ -10,7 +10,7 @@ func floorDiv(a, b float32) int {
 	return int(math.Floor(float64(a) / float64(b)))
 }
 
-func roundFloat(val float64, precision uint) float64 {
+func RoundFloat(val float64, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(val*ratio) / ratio
 }
