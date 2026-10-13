@@ -7,21 +7,13 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-// globals
-
-var boidsAmount int32 = 400
-var doGridOptimize bool = true
-
 var boids = []*Boid{}
 
 func main() {
-	rl.InitWindow(1100, 700, "raylib [core] example - basic window")
+	rl.InitWindow(screenX, screenY, "raylib [core] example - basic window")
 	defer rl.CloseWindow()
 
-	//rl.SetTargetFPS(60)
-
 	spawnBoids()
-
 	for !rl.WindowShouldClose() {
 		if detectionRange == 0 {
 			doGridOptimize = false

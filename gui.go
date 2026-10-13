@@ -1,16 +1,14 @@
 package main
 
 import (
-	"math"
 	"strconv"
 
 	rg "github.com/gen2brain/raylib-go/raygui"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var sliderSeparation float32 = 25
-
 func initGui() {
+	var sliderSeparation float32 = 25.0
 	var rect rl.Rectangle = rl.Rectangle{
 		X:      40,
 		Y:      0,
@@ -60,11 +58,13 @@ func initGui() {
 	rg.CheckBox(rect, "Use Grid Optimization", &doGridOptimize)
 }
 
+// draw parameter slider
 func drawSlider(val *float32, max float32, label string, rect *rl.Rectangle) {
 	s := strconv.FormatFloat(roundFloat(float64(*val), 1), 'f', -1, 64)
 	rg.Slider(*rect, s, label, val, 0, max)
 }
 
+// draw parameter slider for int
 func drawSliderInt32(val *int32, max float32, label string, rect *rl.Rectangle) {
 	s := string(*val)
 	tempVal := float32(*val)
@@ -72,6 +72,7 @@ func drawSliderInt32(val *int32, max float32, label string, rect *rl.Rectangle) 
 	*val = int32(tempVal)
 }
 
+// draw optimization grid
 func drawGrid() {
 	// x
 	total := int32(detectionRange)
@@ -79,16 +80,10 @@ func drawGrid() {
 		rl.DrawLine(total, 0, total, bounds.ToInt32().Height, rl.LightGray)
 		total += int32(detectionRange)
 	}
-
 	// y
 	total = int32(detectionRange)
 	for total < int32(bounds.Height) {
 		rl.DrawLine(0, total, bounds.ToInt32().Width, total, rl.LightGray)
 		total += int32(detectionRange)
 	}
-}
-
-func roundFloat(val float64, precision uint) float64 {
-	ratio := math.Pow(10, float64(precision))
-	return math.Round(val*ratio) / ratio
 }

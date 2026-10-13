@@ -1,19 +1,8 @@
 package main
 
 import (
-	"math"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
-
-var detectionRange float32 = 80.0
-var maxSpeed float32 = 600.0
-var maxForce float32 = 200.0
-var desiredSeparation float32 = 24.0
-
-var cohesionValue float32 = 100
-var separationValue float32 = 250
-var alignmentValue float32 = 150
 
 type GridCell struct {
 	X, Y int
@@ -124,18 +113,6 @@ func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	return rl.Vector2Subtract(desiredVelocity, b.velocity)
 }
 
-// Limit a vector's magnitude.
-func limitVector(v rl.Vector2, max float32) rl.Vector2 {
-	length := v.Length()
-
-	if length > max {
-		return rl.Vector2Scale(rl.Vector2Normalize(v), max)
-
-	}
-
-	return v
-}
-
 func boidAction(b *Boid) {
 	nearby := getNearbyBoids(b)
 
@@ -185,10 +162,6 @@ func boidAction(b *Boid) {
 func updateBoidGrid(b *Boid) {
 	b.gridCell.X = floorDiv(b.position.X, detectionRange)
 	b.gridCell.Y = floorDiv(b.position.Y, detectionRange)
-}
-
-func floorDiv(a, b float32) int {
-	return int(math.Floor(float64(a) / float64(b)))
 }
 
 func getNearbyBoids(b *Boid) []*NearbyBoid {
