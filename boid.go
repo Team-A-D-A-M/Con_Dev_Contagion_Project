@@ -1,12 +1,14 @@
 package main
 
 import (
+	"math"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 var detectionRange float32 = 80.0
 var maxSpeed float32 = 600.0
-var maxForce float32 = 500.0
+var maxForce float32 = 200.0
 var desiredSeparation float32 = 24.0
 
 var cohesionValue float32 = 100
@@ -16,6 +18,7 @@ var alignmentValue float32 = 150
 type Boid struct {
 	position rl.Vector2
 	velocity rl.Vector2
+	gridCell int
 }
 
 type NearbyBoid struct {
@@ -170,6 +173,19 @@ func boidAction(b *Boid) {
 		b.position.Y -= bounds.Height
 	}
 
+	updateBoidGrid(b)
+}
+
+func updateBoidGrid(b *Boid) {
+	valX := floorDiv(b.position.X, detectionRange)
+	valY := floorDiv(b.position.Y, detectionRange)
+
+	valX = valY
+	valY = valX
+}
+
+func floorDiv(a, b float32) int {
+	return int(math.Floor(float64(a) / float64(b)))
 }
 
 func getNearbyBoids(b *Boid) []*NearbyBoid {

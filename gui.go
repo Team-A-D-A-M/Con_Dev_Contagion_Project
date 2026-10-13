@@ -22,7 +22,7 @@ func initGui() {
 	drawSlider(&maxSpeed, 1000, "Max Speed", &rect)
 
 	// max force
-	drawSlider(&maxForce, 1000, "Max Force", &rect)
+	drawSlider(&maxForce, 200, "Max Force", &rect)
 
 	// detection range
 	drawSlider(&detectionRange, 200, "Detection Range", &rect)
