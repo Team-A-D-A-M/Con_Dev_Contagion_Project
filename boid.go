@@ -4,14 +4,14 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var detectionRange float32 = 50.0
-var maxSpeed float32 = 100.0
-var maxForce float32 = 50.0
-var desiredSeparation float32 = 20.0
+var detectionRange float32 = 80.0
+var maxSpeed float32 = 600.0
+var maxForce float32 = 500.0
+var desiredSeparation float32 = 24.0
 
-var cohesionValue float32 = 1.0
-var separationValue float32 = 1.0
-var alignmentValue float32 = 1.0
+var cohesionValue float32 = 100
+var separationValue float32 = 250
+var alignmentValue float32 = 150
 
 type Boid struct {
 	position rl.Vector2
@@ -123,6 +123,7 @@ func limitVector(v rl.Vector2, max float32) rl.Vector2 {
 
 	if length > max {
 		return rl.Vector2Scale(rl.Vector2Normalize(v), max)
+
 	}
 
 	return v
@@ -157,6 +158,18 @@ func boidAction(b *Boid) {
 		b.position,
 		rl.Vector2Scale(b.velocity, dt),
 	)
+
+	if b.position.X < 0.0 {
+		b.position.X += bounds.Width
+	} else if b.position.X > bounds.Width {
+		b.position.X -= bounds.Width
+	}
+	if b.position.Y < 0.0 {
+		b.position.Y += bounds.Height
+	} else if b.position.Y > bounds.Height {
+		b.position.Y -= bounds.Height
+	}
+
 }
 
 func getNearbyBoids(b *Boid) []*NearbyBoid {
@@ -178,4 +191,25 @@ func getNearbyBoids(b *Boid) []*NearbyBoid {
 	}
 
 	return nearbyBoids
+}
+
+var lineLength float32 = 24.0
+
+func drawBoid(b *Boid, highlight bool) {
+	col := rl.Blue
+	if highlight {
+		col = rl.Red
+	}
+	vel := rl.Vector2Normalize(b.velocity)
+	if highlight {
+		rl.DrawCircleLines(int32(b.position.X), int32(b.position.Y), detectionRange, rl.LightGray)
+	}
+	rl.DrawLine(int32(b.position.X), int32(b.position.Y), int32(b.position.X+vel.X*lineLength), int32(b.position.Y+vel.Y*lineLength), rl.LightGray)
+	rl.DrawPoly(
+		b.position,
+		3,
+		6,
+		rl.Vector2Angle(right2d, b.velocity)*rl.Rad2deg,
+		col,
+	)
 }
