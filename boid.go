@@ -15,10 +15,14 @@ var cohesionValue float32 = 100
 var separationValue float32 = 250
 var alignmentValue float32 = 150
 
+type GridCell struct {
+	X, Y int
+}
+
 type Boid struct {
 	position rl.Vector2
 	velocity rl.Vector2
-	gridCell int
+	gridCell GridCell
 }
 
 type NearbyBoid struct {
@@ -173,15 +177,14 @@ func boidAction(b *Boid) {
 		b.position.Y -= bounds.Height
 	}
 
-	updateBoidGrid(b)
+	if doGridOptimize {
+		updateBoidGrid(b)
+	}
 }
 
 func updateBoidGrid(b *Boid) {
-	valX := floorDiv(b.position.X, detectionRange)
-	valY := floorDiv(b.position.Y, detectionRange)
-
-	valX = valY
-	valY = valX
+	b.gridCell.X = floorDiv(b.position.X, detectionRange)
+	b.gridCell.Y = floorDiv(b.position.Y, detectionRange)
 }
 
 func floorDiv(a, b float32) int {
@@ -193,6 +196,12 @@ func getNearbyBoids(b *Boid) []*NearbyBoid {
 
 	for _, other := range boids {
 		if other == b {
+			continue
+		}
+
+		diffX := b.gridCell.X - other.gridCell.X
+		diffY := b.gridCell.Y - other.gridCell.Y
+		if (diffX < -1 || diffX > 1 || diffY < -1 || diffY > 1) && doGridOptimize {
 			continue
 		}
 

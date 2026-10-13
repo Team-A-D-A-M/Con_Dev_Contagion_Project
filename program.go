@@ -10,25 +10,22 @@ import (
 // globals
 
 var boidsAmount int32 = 400
+var doGridOptimize bool = true
 
 var boids = []*Boid{}
 
 func main() {
-	fmt.Println(rl.Vector2Angle(up2d, rl.Vector2{X: 1.0, Y: 0.0}))
 	rl.InitWindow(1100, 700, "raylib [core] example - basic window")
 	defer rl.CloseWindow()
 
-	rl.SetTargetFPS(60)
+	//rl.SetTargetFPS(60)
 
-	for range boidsAmount {
-		boids = append(boids,
-			&Boid{
-				position: rl.Vector2{X: rand.Float32()*100 + 200, Y: rand.Float32()*100 + 200},
-			},
-		)
-	}
+	spawnBoids()
 
 	for !rl.WindowShouldClose() {
+		if detectionRange == 0 {
+			doGridOptimize = false
+		}
 		for _, b := range boids {
 			boidAction(b)
 		}
@@ -36,6 +33,9 @@ func main() {
 		rl.BeginDrawing()
 
 		rl.ClearBackground(rl.RayWhite)
+		if doGridOptimize {
+			drawGrid()
+		}
 
 		for i, b := range boids {
 			if i == 0 {
@@ -45,7 +45,26 @@ func main() {
 				drawBoid(b, false)
 			}
 		}
+
 		initGui()
+
+		rl.DrawFPS(bounds.ToInt32().Width-80, 20)
 		rl.EndDrawing()
+	}
+}
+
+func setBoidsAmount(newAmount int32) {
+	boidsAmount = newAmount
+	spawnBoids()
+}
+
+func spawnBoids() {
+	boids = []*Boid{}
+	for range boidsAmount {
+		boids = append(boids,
+			&Boid{
+				position: rl.Vector2{X: rand.Float32()*150 + bounds.Width*0.5, Y: rand.Float32()*150 + bounds.Height*0.5},
+			},
+		)
 	}
 }
