@@ -8,7 +8,7 @@ Boids is an agent-based flocking simulator written in Go.
 The current 2D simulation is in the `boids` folder, split into two packages:
 
 - `simulation`: Contains the boid behaviour and simulation settings
-- `ui`: Draws the UI controls
+- `ui`: Draws the UI controls 
 
 ## Installation Guide
 1. Clone the repository:  
