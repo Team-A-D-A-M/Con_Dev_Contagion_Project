@@ -1,5 +1,5 @@
 # ![Boids Logo](Documentation/Logo/boid.png) Boids 
-**Concurrent Development - Software Development - Year 4, Semester 1**  
+**Concurrent Development - Software Development - Year 4, Semester 1 - 2026**  
 **South East Technological University**
 
 ## Project Description
