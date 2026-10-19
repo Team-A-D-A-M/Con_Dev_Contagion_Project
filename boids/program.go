@@ -30,9 +30,12 @@ func main() {
 			simulation.DoGridOptimize = false
 		}
 
+		// Get the frame time in seconds.
+		dt := rl.GetFrameTime()
+
 		// Update each boid one at a time.
 		for _, b := range simulation.Boids {
-			simulation.BoidAction(b)
+			simulation.BoidAction(b, dt)
 		}
 
 		// Start drawing to texture

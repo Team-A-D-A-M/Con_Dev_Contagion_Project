@@ -141,7 +141,7 @@ func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 }
 
 // BoidAction updates the boid's movement using the 3 flocking rules.
-func BoidAction(b *Boid) {
+func BoidAction(b *Boid, dt float32) {
 	// Find neighbours within the detection range.
 	nearby := getNearbyBoids(b)
 
@@ -165,9 +165,6 @@ func BoidAction(b *Boid) {
 
 	// Keep the steering force within MaxForce.
 	steering = limitVector(steering, MaxForce)
-
-	// Get the frame time in seconds.
-	dt := rl.GetFrameTime()
 
 	// Change the velocity based on steering and frame time.
 	b.Velocity = rl.Vector2Add(
