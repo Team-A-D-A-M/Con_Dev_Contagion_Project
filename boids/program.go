@@ -20,6 +20,9 @@ func main() {
 	//create boids
 	spawnBoids()
 
+	// create render texture
+	var target rl.RenderTexture2D = rl.LoadRenderTexture(simulation.ScreenX, simulation.ScreenY)
+
 	// keep updating and drawing until window is closed
 	for !rl.WindowShouldClose() {
 		// Turn off grid optimisation if the detection range is zero.
@@ -32,8 +35,8 @@ func main() {
 			simulation.BoidAction(b)
 		}
 
-		// Start drawing the current frame.
-		rl.BeginDrawing()
+		// Start drawing to texture
+		rl.BeginTextureMode(target)
 
 		// Clear the screen for the new frame.
 		rl.ClearBackground(rl.RayWhite)
@@ -55,6 +58,15 @@ func main() {
 		}
 
 		ui.InitGui()
+
+		// stop drawing to texture
+		rl.EndTextureMode()
+
+		// start drawing to screen
+		rl.BeginDrawing()
+
+		// draw computed texture to screen
+		rl.DrawTextureRec(target.Texture, rl.Rectangle{0.0, 0.0, float32(target.Texture.Width), float32(-target.Texture.Height)}, rl.Vector2{0.0, 0.0}, rl.White)
 
 		// Show the FPS.
 		rl.DrawFPS(simulation.Bounds.ToInt32().Width-80, 20)
