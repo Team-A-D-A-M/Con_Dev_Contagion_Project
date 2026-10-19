@@ -26,6 +26,22 @@ go run .
 [//]: # (TODO)
 [//]: # (## Project files)
 
+## Benchmarks
+Measures the time to run the three flocking rules and calculate each bird's next movement. Tests use 100, 500 and 1000 birds.
+
+Serial processes birds one at a time. Parallel divides the work between workers. Both use the same starting data and settings. Graphics are not timed.
+
+Currently, only the serial benchmark is available. From the `boids` folder, run:
+```bash
+go test ./tests -run '^$' -bench '^BenchmarkSerial$' -count=5
+```
+
+Each benchmark runs five times. The median results will be used to compare serial and parallel times and calculate speed-up and efficiency.
+
+Parallel benchmarks: to be added 
+
+Results and findings: to be put in documentation
+
 
 ## Technologies Used
 - GoLang
