@@ -10,19 +10,12 @@ import (
 
 func InitGui() {
 	var sliderSeparation float32 = 25.0
+
 	var rect rl.Rectangle = rl.Rectangle{
 		X:      40,
 		Y:      0,
 		Width:  200,
 		Height: 20,
-	}
-
-	// boids amount
-	s := strconv.Itoa(int(simulation.BoidsAmount))
-	tempVal := float32(simulation.BoidsAmount)
-	rg.Slider(rect, s, "Amount of Boids", &tempVal, 0, 1000)
-	if int32(tempVal) != simulation.BoidsAmount {
-		//main.SetBoidsAmount(int32(tempVal))
 	}
 
 	// max speed
@@ -57,6 +50,22 @@ func InitGui() {
 	// uses grid
 	rect.Y += sliderSeparation
 	rg.CheckBox(rect, "Use Grid Optimization", &simulation.DoGridOptimize)
+}
+
+func DrawGUI(SetBoidsAmount func(int32)) {
+	var rect rl.Rectangle = rl.Rectangle{
+		X:      40,
+		Y:      0,
+		Width:  200,
+		Height: 20,
+	}
+	// boids amount
+	s := strconv.Itoa(int(simulation.BoidsAmount))
+	tempVal := float32(simulation.BoidsAmount)
+	rg.Slider(rect, s, "Amount of Boids", &tempVal, 0, 1000)
+	if int32(tempVal) != simulation.BoidsAmount {
+		SetBoidsAmount(int32(tempVal))
+	}
 }
 
 // draw parameter slider

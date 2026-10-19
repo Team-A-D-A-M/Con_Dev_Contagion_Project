@@ -58,6 +58,7 @@ func main() {
 		}
 
 		ui.InitGui()
+		ui.DrawGUI(SetBoidsAmount)
 
 		// stop drawing to texture
 		rl.EndTextureMode()
@@ -74,7 +75,6 @@ func main() {
 	}
 }
 
-// SetBoidsAmount changes the amount and recreates the boids.
 func SetBoidsAmount(newAmount int32) {
 	simulation.BoidsAmount = newAmount
 	spawnBoids()
