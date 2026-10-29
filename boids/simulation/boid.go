@@ -141,6 +141,11 @@ func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 }
 
 // BoidAction updates the boid's movement using the 3 flocking rules.
+// TODO(concurrency, step 2): Refactor this into a calculation that takes in the
+// boid's value and its neighbours from the snapshot, and returns a new
+// Boid value. Move the velocity, position, wrapping, and GridCell assignments
+// below into that returned value. Don't update boids here, this should only
+// return the result for the update in the main thread
 func BoidAction(b *Boid, dt float32) {
 	// Find neighbours within the detection range.
 	nearby := getNearbyBoids(b)
@@ -200,6 +205,7 @@ func BoidAction(b *Boid, dt float32) {
 }
 
 // updateBoidGrid updates the grid cell containing the boid.
+// TODO ??
 func updateBoidGrid(b *Boid) {
 	// Divide each position coordinate by the cell size and round down.
 	b.GridCell.X = floorDiv(b.Position.X, DetectionRange)
@@ -207,6 +213,7 @@ func updateBoidGrid(b *Boid) {
 }
 
 // getNearbyBoids finds other boids within the detection range.
+// TODO ??
 func getNearbyBoids(b *Boid) []*NearbyBoid {
 	// Start with an empty list.
 	nearbyBoids := []*NearbyBoid{}

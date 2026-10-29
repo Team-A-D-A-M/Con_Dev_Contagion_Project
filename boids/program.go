@@ -33,7 +33,13 @@ func main() {
 		// Get the frame time in seconds.
 		dt := rl.GetFrameTime()
 
-		// Update each boid one at a time.
+		// TODO(concurrency, step 1): Replace this loop with simulation.UpdateBoids(dt) in update.go
+		// That function should:
+		//   1. Copy every *Boid value into a snapshot before any boid moves
+		//   2. Calculate each boid's next value from that snapshot, in parallel
+		//   3. Wait for all calculations to finish
+		//   4. Copy the calculated values back into Boids before drawing below
+		// Keep drawing and all raylib calls on the main thread here
 		for _, b := range simulation.Boids {
 			simulation.BoidAction(b, dt)
 		}
