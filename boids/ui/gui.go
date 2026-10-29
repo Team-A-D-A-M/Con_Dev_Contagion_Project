@@ -8,16 +8,17 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var rect rl.Rectangle = rl.Rectangle{
+var rect = rl.Rectangle{
 	X:      40,
 	Y:      0,
 	Width:  200,
 	Height: 20,
 }
 
+var sliderSeparation float32 = 25.0
+
 func InitGui() {
 	rect.Y = 0
-	var sliderSeparation float32 = 25.0
 
 	// max speed
 	rect.Y += sliderSeparation
@@ -57,6 +58,7 @@ func DrawGUI(SetBoidsAmount func(int32)) {
 	// boids amount
 	s := strconv.Itoa(int(simulation.BoidsAmount))
 	tempVal := float32(simulation.BoidsAmount)
+	rect.Y += sliderSeparation
 	rg.Slider(rect, s, "Amount of Boids", &tempVal, 0, 1000)
 	if int32(tempVal) != simulation.BoidsAmount {
 		SetBoidsAmount(int32(tempVal))
