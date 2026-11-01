@@ -140,12 +140,28 @@ func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 }
 
-// BoidAction updates the boid's movement using the 3 flocking rules.
-// TODO(concurrency, step 2): Refactor this into a calculation that takes in the
-// boid's value and its neighbours from the snapshot, and returns a new
-// Boid value. Move the velocity, position, wrapping, and GridCell assignments
-// below into that returned value. Don't update boids here, this should only
-// return the result for the update in the main thread
+// BoidAction updates the boid's movement using the 3 flocking rules
+func BoidActionConcurrent(index int, snapshot []Boid, dt float32) Boid {
+	b := snapshot[index]
+
+	// concurrent nearby boids method so it doesnt read global boids
+	nearby := getNearbyBoidsConcurrent(index, snapshot)
+
+	// apply the three flocking rules
+	cohesion := boidCohesion(&b, nearby)
+	separation := boidSeparation(&b, nearby)
+	alignment := boidAlignment(&b, nearby)
+
+	boidMovement(&b, dt, cohesion, separation, alignment)
+
+	// Update the grid cell for the new position.
+	if DoGridOptimize {
+		updateBoidGrid(&b)
+	}
+
+	return b
+}
+
 func BoidAction(b *Boid, dt float32) {
 	// Find neighbours within the detection range.
 	nearby := getNearbyBoids(b)
@@ -159,6 +175,16 @@ func BoidAction(b *Boid, dt float32) {
 	// Calculate steering in the neighbours' average direction.
 	alignment := boidAlignment(b, nearby)
 
+	boidMovement(b, dt, cohesion, separation, alignment)
+
+	// Update which grid cell the boid is in.
+	if DoGridOptimize {
+		updateBoidGrid(b)
+	}
+}
+
+// function with extracted common code for boid action used by parallel and serial versions
+func boidMovement(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector2, alignment rl.Vector2) {
 	// Multiply each rule by its weight and add the results.
 	steering := rl.Vector2Add(
 		rl.Vector2Scale(cohesion, CohesionValue),
@@ -197,23 +223,50 @@ func BoidAction(b *Boid, dt float32) {
 	} else if b.Position.Y > Bounds.Height {
 		b.Position.Y -= Bounds.Height
 	}
-
-	// Update which grid cell the boid is in.
-	if DoGridOptimize {
-		updateBoidGrid(b)
-	}
 }
 
 // updateBoidGrid updates the grid cell containing the boid.
-// TODO ??
 func updateBoidGrid(b *Boid) {
 	// Divide each position coordinate by the cell size and round down.
 	b.GridCell.X = floorDiv(b.Position.X, DetectionRange)
 	b.GridCell.Y = floorDiv(b.Position.Y, DetectionRange)
 }
 
+func getNearbyBoidsConcurrent(index int, snapshot []Boid) []*NearbyBoid {
+	nearbyBoids := make([]*NearbyBoid, 0)
+
+	for i := range snapshot {
+
+		if i == index {
+			continue
+		}
+
+		other := &snapshot[i]
+
+		// Find how many grid cells apart the boids are.
+		diffX := snapshot[index].GridCell.X - other.GridCell.X
+		diffY := snapshot[index].GridCell.Y - other.GridCell.Y
+		// When optimising, only check the same cell and adjacent cells.
+		if (diffX < -1 || diffX > 1 || diffY < -1 || diffY > 1) && DoGridOptimize {
+			continue
+		}
+
+		// Measure the distance between the boids.
+		distance := rl.Vector2Distance(snapshot[index].Position, other.Position)
+
+		// Add the neighbour and its distance if it is within range.
+		if distance < DetectionRange {
+			nearbyBoids = append(nearbyBoids, &NearbyBoid{
+				Boid:     other,
+				Distance: distance,
+			})
+		}
+	}
+
+	return nearbyBoids
+}
+
 // getNearbyBoids finds other boids within the detection range.
-// TODO ??
 func getNearbyBoids(b *Boid) []*NearbyBoid {
 	// Start with an empty list.
 	nearbyBoids := []*NearbyBoid{}
