@@ -180,18 +180,7 @@ func BoidAction(b *Boid, dt float32) {
 		rl.Vector2Scale(b.Velocity, dt),
 	)
 
-	// Move boids crossing the left or right edge to the opposite side.
-	if b.Position.X < 0.0 {
-		b.Position.X += Bounds.Width
-	} else if b.Position.X > Bounds.Width {
-		b.Position.X -= Bounds.Width
-	}
-	// Move boids crossing the top or bottom edge to the opposite side.
-	if b.Position.Y < 0.0 {
-		b.Position.Y += Bounds.Height
-	} else if b.Position.Y > Bounds.Height {
-		b.Position.Y -= Bounds.Height
-	}
+	b.Position = positionWrap(b.Position)
 
 	// Update which grid cell the boid is in.
 	if DoGridOptimize {
@@ -267,4 +256,22 @@ func DrawBoid(b *Boid, highlight bool) {
 		rl.Vector2Angle(right2d, b.Velocity)*rl.Rad2deg,
 		col,
 	)
+}
+
+func positionWrap(position rl.Vector2) rl.Vector2 {
+	// horizontal wrap
+	if position.X < 0.0 {
+		position.X += Bounds.Width
+	} else if position.X > Bounds.Width {
+		position.X -= Bounds.Width
+	}
+
+	// vertical wrap
+	if position.Y < 0.0 {
+		position.Y += Bounds.Height
+	} else if position.Y > Bounds.Height {
+		position.Y -= Bounds.Height
+	}
+
+	return position
 }
