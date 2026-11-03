@@ -1,24 +1,22 @@
 package simulation
 
 import (
-	"math"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-// GridCell stores a grid's location.
+// GridCell stores a grid's location
 type GridCell struct {
 	X, Y int
 }
 
-// Boid stores a boid's position, velocity and location.
+// Boid stores a boid's position, velocity and location
 type Boid struct {
 	Position rl.Vector2
 	Velocity rl.Vector2
 	GridCell GridCell
 }
 
-// NearbyBoid stores a nearby boid and its distance.
+// NearbyBoid stores a nearby boid and it's distance
 type NearbyBoid struct {
 	Boid     *Boid
 	Distance float32
@@ -28,24 +26,32 @@ type NearbyBoid struct {
 func boidCohesion(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	center := rl.Vector2Zero()
 
+	//return no steering when there are no nearby boids
 	if len(nearby) == 0 {
 		return rl.Vector2Zero()
 	}
 
+	// Add positions of nearby boids
 	for _, n := range nearby {
 		center = rl.Vector2Add(center, n.Boid.Position)
 	}
 
+	// calculate average position of nearby boids
 	center = rl.Vector2Scale(center, 1.0/float32(len(nearby)))
+	// Find the direction towards the centre of nearby boids.
 	desiredVelocity := rl.Vector2Subtract(center, b.Position)
 
+	// Set the desired speed to MaxSpeed if the direction is not zero.
 	if desiredVelocity.Length() > 0 {
+		// Normalize makes the vector length 1 without changing its direction.
+		// Scale multiplies it by MaxSpeed to set the desired speed.
 		desiredVelocity = rl.Vector2Scale(
 			rl.Vector2Normalize(desiredVelocity),
 			MaxSpeed,
 		)
 	}
 
+	// Calculate steering from the current velocity.
 	return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 }
 
@@ -54,39 +60,49 @@ func boidSeparation(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	steer := rl.Vector2Zero()
 	count := 0
 
+	// Check each nearby boid.
 	for _, n := range nearby {
 		distance := n.Distance
 
+		// Skip overlapping boids and boids that are far enough away
 		if distance <= 0.001 || distance >= DesiredSeparation {
 			continue
 		}
 
+		// Find the direction away from the nearby boid.
 		difference := rl.Vector2Subtract(b.Position, n.Boid.Position)
 
+		// Give closer boids a stronger influence.
 		difference = rl.Vector2Scale(
 			rl.Vector2Normalize(difference),
 			1.0/distance,
 		)
 
+		// Add the vector pointing away from this neighbour to the total.
 		steer = rl.Vector2Add(steer, difference)
 		count++
 	}
 
+	// Return zero steering if no neighbours were included.
 	if count == 0 {
 		return rl.Vector2Zero()
 	}
 
+	// Divide the total by the number of included neighbours.
 	steer = rl.Vector2Scale(steer, 1.0/float32(count))
 
+	// Check that there is a direction to steer towards.
 	if steer.Length() > 0 {
+		// Set the desired velocity in this direction at MaxSpeed.
 		desiredVelocity := rl.Vector2Scale(
 			rl.Vector2Normalize(steer),
 			MaxSpeed,
 		)
-
+		// Subtract the current velocity to calculate the steering needed.
 		return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 	}
 
+	// Return zero steering if the vectors cancel each other out.
 	return rl.Vector2Zero()
 }
 
@@ -94,41 +110,51 @@ func boidSeparation(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	if len(nearby) == 0 {
 		return rl.Vector2Zero()
-	}
+	} //no steering if no nearby boids
 
 	avgVelocity := rl.Vector2Zero()
 
+	// Add up the nearby boid's velocities
 	for _, n := range nearby {
 		avgVelocity = rl.Vector2Add(avgVelocity, n.Boid.Velocity)
 	}
 
+	// Divide the total by the number of nearby boids.
 	avgVelocity = rl.Vector2Scale(
 		avgVelocity,
 		1.0/float32(len(nearby)),
 	)
 
+	// Stop here if the average vector is zero.
 	if avgVelocity.Length() == 0 {
 		return rl.Vector2Zero()
 	}
 
+	// Use the average direction with a target speed of MaxSpeed.
 	desiredVelocity := rl.Vector2Scale(
 		rl.Vector2Normalize(avgVelocity),
 		MaxSpeed,
 	)
 
+	// Subtract the current velocity to calculate the steering needed.
 	return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 }
 
-// BoidAction updates the boid's movement using the flocking rules.
+// BoidAction updates the boid's movement using the 3 flocking rules.
 func BoidAction(b *Boid, dt float32) {
+	// Find neighbours within the detection range.
 	nearby := getNearbyBoids(b)
 
+	// Calculate steering towards the group's centre.
 	cohesion := boidCohesion(b, nearby)
-	separation := boidSeparation(b, nearby)
-	alignment := boidAlignment(b, nearby)
-	avoidance := obstacleAvoidance(b)
 
-	// Combine the flocking rules.
+	// Calculate steering away from boids that are too close.
+	separation := boidSeparation(b, nearby)
+
+	// Calculate steering in the neighbours' average direction.
+	alignment := boidAlignment(b, nearby)
+
+	// Multiply each rule by its weight and add the results.
 	steering := rl.Vector2Add(
 		rl.Vector2Scale(cohesion, CohesionValue),
 		rl.Vector2Add(
@@ -137,222 +163,61 @@ func BoidAction(b *Boid, dt float32) {
 		),
 	)
 
-	// Give obstacle avoidance priority.
-	if avoidance.Length() > 0 {
-		steering = rl.Vector2Add(
-			steering,
-			rl.Vector2Scale(avoidance, 1000),
-		)
-	}
-
+	// Keep the steering force within MaxForce.
 	steering = limitVector(steering, MaxForce)
 
-	// Update velocity.
+	// Change the velocity based on steering and frame time.
 	b.Velocity = rl.Vector2Add(
 		b.Velocity,
 		rl.Vector2Scale(steering, dt),
 	)
-
+	// Stop the boid from moving faster than MaxSpeed.
 	b.Velocity = limitVector(b.Velocity, MaxSpeed)
 
-	// Move with collision detection.
-	moveBoidWithCollision(b, dt)
+	// Move the boid based on its velocity and frame time.
+	b.Position = rl.Vector2Add(
+		b.Position,
+		rl.Vector2Scale(b.Velocity, dt),
+	)
 
-	// Wrap around screen edges.
-	if b.Position.X < 0 {
-		b.Position.X += Bounds.Width
-	} else if b.Position.X > Bounds.Width {
-		b.Position.X -= Bounds.Width
-	}
+	b.Position = positionWrap(b.Position)
 
-	if b.Position.Y < 0 {
-		b.Position.Y += Bounds.Height
-	} else if b.Position.Y > Bounds.Height {
-		b.Position.Y -= Bounds.Height
-	}
-
-	// Update grid position.
+	// Update which grid cell the boid is in.
 	if DoGridOptimize {
 		updateBoidGrid(b)
 	}
 }
 
-// Move the boid in small steps to prevent it passing through obstacles.
-func moveBoidWithCollision(b *Boid, dt float32) {
-	distance := b.Velocity.Length() * dt
-
-	// Smaller steps make collision detection more reliable at high speeds.
-	steps := int(math.Ceil(float64(distance / 3)))
-
-	if steps < 1 {
-		steps = 1
-	}
-
-	stepTime := dt / float32(steps)
-
-	for i := 0; i < steps; i++ {
-		nextPosition := rl.Vector2Add(
-			b.Position,
-			rl.Vector2Scale(b.Velocity, stepTime),
-		)
-
-		if CurrentMap == 1 {
-			nextPosition = resolveMap1Collisions(nextPosition, &b.Velocity)
-		} else {
-			nextPosition = resolveMazeCollisions(nextPosition, &b.Velocity)
-		}
-
-		b.Position = nextPosition
-	}
-}
-
-// Handle collisions with Map 1 circles and rectangles.
-func resolveMap1Collisions(position rl.Vector2, velocity *rl.Vector2) rl.Vector2 {
-	const boidRadius float32 = 7
-
-	// Check circular obstacles.
-	for _, obstacle := range Obstacles {
-		difference := rl.Vector2Subtract(position, obstacle.Position)
-		distance := difference.Length()
-		minimumDistance := obstacle.Radius + boidRadius
-
-		if distance < minimumDistance {
-			var normal rl.Vector2
-
-			if distance > 0.001 {
-				normal = rl.Vector2Scale(difference, 1.0/distance)
-			} else {
-				normal = rl.Vector2{X: 1, Y: 0}
-			}
-
-			// Push the boid outside the circle.
-			position = rl.Vector2Add(
-				obstacle.Position,
-				rl.Vector2Scale(normal, minimumDistance),
-			)
-
-			// Remove velocity directed into the obstacle.
-			inwardSpeed := rl.Vector2DotProduct(*velocity, normal)
-
-			if inwardSpeed < 0 {
-				*velocity = rl.Vector2Subtract(
-					*velocity,
-					rl.Vector2Scale(normal, inwardSpeed),
-				)
-			}
-		}
-	}
-
-	// Check rectangular obstacles.
-	position = resolveRectangles(position, velocity, RectObstacles)
-
-	return position
-}
-
-// Handle collisions with the maze walls.
-func resolveMazeCollisions(position rl.Vector2, velocity *rl.Vector2) rl.Vector2 {
-	return resolveRectangles(position, velocity, MazeObstacles)
-}
-
-// Resolve collisions with a collection of rectangles.
-func resolveRectangles(position rl.Vector2, velocity *rl.Vector2, obstacles []RectObstacle) rl.Vector2 {
-	const boidRadius float32 = 7
-
-	for _, obstacle := range obstacles {
-		r := obstacle.Bounds
-
-		minX := r.X - boidRadius
-		maxX := r.X + r.Width + boidRadius
-		minY := r.Y - boidRadius
-		maxY := r.Y + r.Height + boidRadius
-
-		if position.X < minX ||
-			position.X > maxX ||
-			position.Y < minY ||
-			position.Y > maxY {
-			continue
-		}
-
-		left := position.X - minX
-		right := maxX - position.X
-		top := position.Y - minY
-		bottom := maxY - position.Y
-
-		smallest := left
-		side := 0
-
-		if right < smallest {
-			smallest = right
-			side = 1
-		}
-
-		if top < smallest {
-			smallest = top
-			side = 2
-		}
-
-		if bottom < smallest {
-			side = 3
-		}
-
-		var normal rl.Vector2
-
-		switch side {
-		case 0:
-			position.X = minX
-			normal = rl.Vector2{X: -1, Y: 0}
-
-		case 1:
-			position.X = maxX
-			normal = rl.Vector2{X: 1, Y: 0}
-
-		case 2:
-			position.Y = minY
-			normal = rl.Vector2{X: 0, Y: -1}
-
-		case 3:
-			position.Y = maxY
-			normal = rl.Vector2{X: 0, Y: 1}
-		}
-
-		// Remove velocity directed into the wall.
-		inwardSpeed := rl.Vector2DotProduct(*velocity, normal)
-
-		if inwardSpeed < 0 {
-			*velocity = rl.Vector2Subtract(
-				*velocity,
-				rl.Vector2Scale(normal, inwardSpeed),
-			)
-		}
-	}
-
-	return position
-}
-
 // updateBoidGrid updates the grid cell containing the boid.
 func updateBoidGrid(b *Boid) {
+	// Divide each position coordinate by the cell size and round down.
 	b.GridCell.X = floorDiv(b.Position.X, DetectionRange)
 	b.GridCell.Y = floorDiv(b.Position.Y, DetectionRange)
 }
 
 // getNearbyBoids finds other boids within the detection range.
 func getNearbyBoids(b *Boid) []*NearbyBoid {
+	// Start with an empty list.
 	nearbyBoids := []*NearbyBoid{}
 
 	for _, other := range Boids {
+		// Do not count the boid itself as a neighbour.
 		if other == b {
 			continue
 		}
 
+		// Find how many grid cells apart the boids are.
 		diffX := b.GridCell.X - other.GridCell.X
 		diffY := b.GridCell.Y - other.GridCell.Y
-
+		// When optimising, only check the same cell and adjacent cells.
 		if (diffX < -1 || diffX > 1 || diffY < -1 || diffY > 1) && DoGridOptimize {
 			continue
 		}
 
+		// Measure the distance between the boids.
 		distance := rl.Vector2Distance(b.Position, other.Position)
 
+		// Add the neighbour and its distance if it is within range.
 		if distance < DetectionRange {
 			nearbyBoids = append(nearbyBoids, &NearbyBoid{
 				Boid:     other,
@@ -361,39 +226,29 @@ func getNearbyBoids(b *Boid) []*NearbyBoid {
 		}
 	}
 
+	// Return the neighbours found.
 	return nearbyBoids
 }
 
-// Line length for the boid direction indicator.
+// lineLength sets how long the direction line is.
 var lineLength float32 = 24.0
 
 // DrawBoid draws the boid and highlights it when requested.
 func DrawBoid(b *Boid, highlight bool) {
+	// Use blue unless the boid is highlighted.
 	col := rl.Blue
-
 	if highlight {
 		col = rl.Red
 	}
 
 	vel := rl.Vector2Normalize(b.Velocity)
-
+	// Show the highlighted boid's detection range as a circle.
 	if highlight {
-		rl.DrawCircleLines(
-			int32(b.Position.X),
-			int32(b.Position.Y),
-			DetectionRange,
-			rl.LightGray,
-		)
+		rl.DrawCircleLines(int32(b.Position.X), int32(b.Position.Y), DetectionRange, rl.LightGray)
 	}
-
-	rl.DrawLine(
-		int32(b.Position.X),
-		int32(b.Position.Y),
-		int32(b.Position.X+vel.X*lineLength),
-		int32(b.Position.Y+vel.Y*lineLength),
-		rl.LightGray,
-	)
-
+	// Draw a line showing which way the boid is moving.
+	rl.DrawLine(int32(b.Position.X), int32(b.Position.Y), int32(b.Position.X+vel.X*lineLength), int32(b.Position.Y+vel.Y*lineLength), rl.LightGray)
+	// Draw the boid as a triangle facing its movement direction.
 	rl.DrawPoly(
 		b.Position,
 		3,
@@ -401,4 +256,22 @@ func DrawBoid(b *Boid, highlight bool) {
 		rl.Vector2Angle(right2d, b.Velocity)*rl.Rad2deg,
 		col,
 	)
+}
+
+func positionWrap(position rl.Vector2) rl.Vector2 {
+	// horizontal wrap
+	if position.X < 0.0 {
+		position.X += Bounds.Width
+	} else if position.X > Bounds.Width {
+		position.X -= Bounds.Width
+	}
+
+	// vertical wrap
+	if position.Y < 0.0 {
+		position.Y += Bounds.Height
+	} else if position.Y > Bounds.Height {
+		position.Y -= Bounds.Height
+	}
+
+	return position
 }
