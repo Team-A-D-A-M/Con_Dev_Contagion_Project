@@ -22,3 +22,7 @@ var Boids []*Boid
 
 // number of worker pools to spawn
 var Workers = 10
+
+var IsParallel = true
+
+var ParallelOrSerial = "Parallel"

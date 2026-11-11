@@ -33,8 +33,16 @@ func main() {
 		// Get the frame time in seconds.
 		dt := rl.GetFrameTime()
 
-		// concurrent update function
-		simulation.UpdateBoids(dt)
+		switch simulation.IsParallel {
+		case true:
+			// concurrent update function
+			simulation.UpdateBoids(dt)
+		case false:
+			// Update each boid one at a time.
+			for _, b := range simulation.Boids {
+				simulation.BoidAction(b, dt)
+			}
+		}
 
 		// Start drawing to texture
 		rl.BeginTextureMode(target)

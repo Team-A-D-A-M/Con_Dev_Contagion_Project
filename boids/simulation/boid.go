@@ -152,7 +152,7 @@ func BoidActionConcurrent(index int, snapshot []Boid, dt float32) Boid {
 	separation := boidSeparation(&b, nearby)
 	alignment := boidAlignment(&b, nearby)
 
-	boidMovement(&b, dt, cohesion, separation, alignment)
+	boidMovementConcurrent(&b, dt, cohesion, separation, alignment)
 
 	// Update the grid cell for the new position.
 	if DoGridOptimize {
@@ -162,29 +162,8 @@ func BoidActionConcurrent(index int, snapshot []Boid, dt float32) Boid {
 	return b
 }
 
-func BoidAction(b *Boid, dt float32) {
-	// Find neighbours within the detection range.
-	nearby := getNearbyBoids(b)
-
-	// Calculate steering towards the group's centre.
-	cohesion := boidCohesion(b, nearby)
-
-	// Calculate steering away from boids that are too close.
-	separation := boidSeparation(b, nearby)
-
-	// Calculate steering in the neighbours' average direction.
-	alignment := boidAlignment(b, nearby)
-
-	boidMovement(b, dt, cohesion, separation, alignment)
-
-	// Update which grid cell the boid is in.
-	if DoGridOptimize {
-		updateBoidGrid(b)
-	}
-}
-
 // function with extracted common code for boid action used by parallel and serial versions
-func boidMovement(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector2, alignment rl.Vector2) {
+func boidMovementConcurrent(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector2, alignment rl.Vector2) {
 	// Multiply each rule by its weight and add the results.
 	steering := rl.Vector2Add(
 		rl.Vector2Scale(cohesion, CohesionValue),
@@ -222,6 +201,54 @@ func boidMovement(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector
 		b.Position.Y += Bounds.Height
 	} else if b.Position.Y > Bounds.Height {
 		b.Position.Y -= Bounds.Height
+	}
+}
+
+// BoidAction updates the boid's movement using the 3 flocking rules.
+func BoidAction(b *Boid, dt float32) {
+	// Find neighbours within the detection range.
+	nearby := getNearbyBoids(b)
+
+	// Calculate steering towards the group's centre.
+	cohesion := boidCohesion(b, nearby)
+
+	// Calculate steering away from boids that are too close.
+	separation := boidSeparation(b, nearby)
+
+	// Calculate steering in the neighbours' average direction.
+	alignment := boidAlignment(b, nearby)
+
+	// Multiply each rule by its weight and add the results.
+	steering := rl.Vector2Add(
+		rl.Vector2Scale(cohesion, CohesionValue),
+		rl.Vector2Add(
+			rl.Vector2Scale(separation, SeparationValue),
+			rl.Vector2Scale(alignment, AlignmentValue),
+		),
+	)
+
+	// Keep the steering force within MaxForce.
+	steering = limitVector(steering, MaxForce)
+
+	// Change the velocity based on steering and frame time.
+	b.Velocity = rl.Vector2Add(
+		b.Velocity,
+		rl.Vector2Scale(steering, dt),
+	)
+	// Stop the boid from moving faster than MaxSpeed.
+	b.Velocity = limitVector(b.Velocity, MaxSpeed)
+
+	// Move the boid based on its velocity and frame time.
+	b.Position = rl.Vector2Add(
+		b.Position,
+		rl.Vector2Scale(b.Velocity, dt),
+	)
+
+	b.Position = positionWrap(b.Position)
+
+	// Update which grid cell the boid is in.
+	if DoGridOptimize {
+		updateBoidGrid(b)
 	}
 }
 
@@ -327,4 +354,22 @@ func DrawBoid(b *Boid, highlight bool) {
 		rl.Vector2Angle(right2d, b.Velocity)*rl.Rad2deg,
 		col,
 	)
+}
+
+func positionWrap(position rl.Vector2) rl.Vector2 {
+	// horizontal wrap
+	if position.X < 0.0 {
+		position.X += Bounds.Width
+	} else if position.X > Bounds.Width {
+		position.X -= Bounds.Width
+	}
+
+	// vertical wrap
+	if position.Y < 0.0 {
+		position.Y += Bounds.Height
+	} else if position.Y > Bounds.Height {
+		position.Y -= Bounds.Height
+	}
+
+	return position
 }
