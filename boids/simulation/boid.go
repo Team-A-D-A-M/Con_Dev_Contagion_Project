@@ -207,7 +207,7 @@ func boidMovementConcurrent(b *Boid, dt float32, cohesion rl.Vector2, separation
 // BoidAction updates the boid's movement using the 3 flocking rules.
 func BoidAction(b *Boid, dt float32) {
 	// Find neighbours within the detection range.
-	nearby := getNearbyBoids(b)
+	nearby := GetNearbyBoids(b)
 
 	// Calculate steering towards the group's centre.
 	cohesion := boidCohesion(b, nearby)
@@ -294,7 +294,7 @@ func getNearbyBoidsConcurrent(index int, snapshot []Boid) []*NearbyBoid {
 }
 
 // getNearbyBoids finds other boids within the detection range.
-func getNearbyBoids(b *Boid) []*NearbyBoid {
+func GetNearbyBoids(b *Boid) []*NearbyBoid {
 	// Start with an empty list.
 	nearbyBoids := []*NearbyBoid{}
 
