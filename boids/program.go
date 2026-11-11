@@ -3,7 +3,6 @@ package main
 import (
 	"boids/simulation"
 	"boids/ui"
-	"fmt"
 	"math/rand/v2"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -59,7 +58,7 @@ func main() {
 			// Highlight the first boid and print its velocity.
 			if i == 0 {
 				simulation.DrawBoid(b, true)
-				fmt.Println(b.Velocity)
+				//fmt.Println(b.Velocity)
 			} else {
 				// Draw the rest normally.
 				simulation.DrawBoid(b, false)
@@ -79,7 +78,7 @@ func main() {
 		rl.DrawTextureRec(target.Texture, rl.Rectangle{0.0, 0.0, float32(target.Texture.Width), float32(-target.Texture.Height)}, rl.Vector2{0.0, 0.0}, rl.White)
 
 		// Show the FPS.
-		rl.DrawFPS(simulation.Bounds.ToInt32().Width-80, 20)
+		rl.DrawFPS(simulation.Bounds.ToInt32().Width-120, 20)
 		rl.EndDrawing()
 	}
 }

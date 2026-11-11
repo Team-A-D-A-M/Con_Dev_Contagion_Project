@@ -26,6 +26,14 @@ go run .
 [//]: # (TODO)
 [//]: # (## Project files)
 
+## Tests
+- **Detection range:** checks boids inside, exactly at and outside the range.
+
+From the `boids` folder, run:
+```bash
+go test ./tests -v
+```
+
 ## Benchmarks
 Measures the time to run the three flocking rules and calculate each bird's next movement. Tests use 100, 500 and 1000 birds.
 
