@@ -24,5 +24,3 @@ var Boids []*Boid
 var Workers = 10
 
 var IsParallel = true
-
-var ParallelOrSerial = "Parallel"
