@@ -19,3 +19,6 @@ var ScreenY int32 = 700
 
 // active simulation boid population
 var Boids []*Boid
+
+// number of worker pools to spawn
+var Workers = 10
