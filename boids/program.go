@@ -1,103 +1,61 @@
 package main
 
 import (
-	"boids/simulation"
-	"boids/ui"
-	"fmt"
-	"math/rand/v2"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
+ "boids/simulation"
+ "boids/ui"
+ "math/rand/v2"
+ rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-// main opens the window and runs the program.
 func main() {
-	// open window with chosen size
-	rl.InitWindow(simulation.ScreenX, simulation.ScreenY, "Boids")
+ rl.InitWindow(simulation.ScreenX+ui.SidebarWidth, simulation.ScreenY, "Boids - Concurrent Development")
+ defer rl.CloseWindow()
+ rl.SetTargetFPS(60)
+ spawnBoids()
+ target := rl.LoadRenderTexture(simulation.ScreenX, simulation.ScreenY)
+ defer rl.UnloadRenderTexture(target)
 
-	// close when main ends
-	defer rl.CloseWindow()
+ for !rl.WindowShouldClose() {
+  if rl.IsKeyPressed(rl.KeyM) { simulation.ToggleMap() }
+  if simulation.DetectionRange <= 0 { simulation.DoGridOptimize = false }
+  dt := rl.GetFrameTime()
+  for _, b := range simulation.Boids { simulation.BoidAction(b, dt) }
 
-	//create boids
-	spawnBoids()
+  // Render the simulation in its own 1100x700 coordinate system.
+  rl.BeginTextureMode(target)
+  rl.ClearBackground(rl.RayWhite)
+  if simulation.DoGridOptimize { ui.DrawGrid() }
+  simulation.DrawObstacles()
+  for i, b := range simulation.Boids { simulation.DrawBoid(b, i == 0) }
+  rl.EndTextureMode()
 
-	// create render texture
-	var target rl.RenderTexture2D = rl.LoadRenderTexture(simulation.ScreenX, simulation.ScreenY)
-
-	// keep updating and drawing until window is closed
-	for !rl.WindowShouldClose() {
-		// Turn off grid optimisation if the detection range is zero.
-		if simulation.DetectionRange == 0 {
-			simulation.DoGridOptimize = false
-		}
-
-		// Get the frame time in seconds.
-		dt := rl.GetFrameTime()
-
-		// Update each boid one at a time.
-		for _, b := range simulation.Boids {
-			simulation.BoidAction(b, dt)
-		}
-
-		// Start drawing to texture
-		rl.BeginTextureMode(target)
-
-		// Clear the screen for the new frame.
-		rl.ClearBackground(rl.RayWhite)
-
-		// Show the grid if enabled.
-		if simulation.DoGridOptimize {
-			ui.DrawGrid()
-		}
-
-		for i, b := range simulation.Boids {
-			// Highlight the first boid and print its velocity.
-			if i == 0 {
-				simulation.DrawBoid(b, true)
-				fmt.Println(b.Velocity)
-			} else {
-				// Draw the rest normally.
-				simulation.DrawBoid(b, false)
-			}
-		}
-
-		ui.InitGui()
-		ui.DrawGUI(SetBoidsAmount)
-
-		// stop drawing to texture
-		rl.EndTextureMode()
-
-		// start drawing to screen
-		rl.BeginDrawing()
-
-		// draw computed texture to screen
-		rl.DrawTextureRec(target.Texture, rl.Rectangle{0.0, 0.0, float32(target.Texture.Width), float32(-target.Texture.Height)}, rl.Vector2{0.0, 0.0}, rl.White)
-
-		// Show FPS.
-		rl.DrawFPS(
-			simulation.Bounds.ToInt32().Width-120,
-			20,
-		)
-
-		rl.EndDrawing()
-	}
+  // Draw the simulation to the right, then draw interactive controls
+  // in screen coordinates on the left (not inside the render texture).
+  rl.BeginDrawing()
+  rl.ClearBackground(rl.RayWhite)
+  rl.DrawTextureRec(target.Texture,
+   rl.Rectangle{X:0,Y:0,Width:float32(target.Texture.Width),Height:-float32(target.Texture.Height)},
+   rl.Vector2{X:float32(ui.SidebarWidth),Y:0}, rl.White)
+  ui.InitGui()
+  ui.DrawGUI(SetBoidsAmount)
+  rl.DrawFPS(ui.SidebarWidth+simulation.ScreenX-120, 20)
+  rl.EndDrawing()
+ }
 }
 
 func SetBoidsAmount(newAmount int32) {
-	simulation.BoidsAmount = newAmount
-	spawnBoids()
+ simulation.BoidsAmount = newAmount
+ spawnBoids()
 }
 
-// spawnBoids creates boids with random starting positions.
 func spawnBoids() {
-	// Clear the old boids.
-	simulation.Boids = []*simulation.Boid{}
-	// Create the chosen number of boids
-	for range simulation.BoidsAmount {
-		simulation.Boids = append(simulation.Boids,
-			&simulation.Boid{
-				// Start in a random spot within 150 pixels right and down from the centre.
-				Position: rl.Vector2{X: rand.Float32()*150 + simulation.Bounds.Width*0.5, Y: rand.Float32()*150 + simulation.Bounds.Height*0.5},
-			},
-		)
-	}
+ simulation.Boids = []*simulation.Boid{}
+ for range simulation.BoidsAmount {
+  b := &simulation.Boid{Position:rl.Vector2{
+   X:rand.Float32()*150+simulation.Bounds.Width*0.5,
+   Y:rand.Float32()*150+simulation.Bounds.Height*0.5,
+  }}
+  simulation.ResolveObstacleCollision(b,b.Position)
+  simulation.Boids = append(simulation.Boids,b)
+ }
 }
