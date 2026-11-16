@@ -8,6 +8,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+// rect stores the position and size to draw each control.
 var rect = rl.Rectangle{
 	X:      40,
 	Y:      0,
@@ -15,8 +16,10 @@ var rect = rl.Rectangle{
 	Height: 20,
 }
 
+// sliderSeparation sets the vertical space between controls.
 var sliderSeparation float32 = 25.0
 
+// InitGui draws the settings controls and updates simulation values.
 func InitGui() {
 	rect.Y = 0
 
@@ -36,7 +39,6 @@ func InitGui() {
 	rect.Y += sliderSeparation
 	drawSlider(&simulation.DesiredSeparation, 200, "Desired Separation", &rect)
 
-	//
 	// cohesion value
 	rect.Y += sliderSeparation
 	drawSlider(&simulation.CohesionValue, 1000, "Cohesion", &rect)
@@ -53,6 +55,7 @@ func InitGui() {
 	rect.Y += sliderSeparation
 	rg.CheckBox(rect, "Use Grid Optimization", &simulation.DoGridOptimize)
 
+	// show current mode
 	rect.Y += sliderSeparation
 	modeLabel := "Serial Mode"
 	if simulation.IsParallel {
@@ -61,6 +64,7 @@ func InitGui() {
 	rg.CheckBox(rect, modeLabel, &simulation.IsParallel)
 }
 
+// DrawGUI draws the boid count slider below the controls drawn by InitGui.
 func DrawGUI(SetBoidsAmount func(int32)) {
 	// boids amount
 	s := strconv.Itoa(int(simulation.BoidsAmount))
@@ -72,21 +76,14 @@ func DrawGUI(SetBoidsAmount func(int32)) {
 	}
 }
 
-// draw parameter slider
+// drawSlider draws a float slider from zero to max and shows a rounded value.
 func drawSlider(val *float32, max float32, label string, rect *rl.Rectangle) {
 	s := strconv.FormatFloat(simulation.RoundFloat(float64(*val), 1), 'f', -1, 64)
 	rg.Slider(*rect, s, label, val, 0, max)
 }
 
-// draw parameter slider for int
-func drawSliderInt32(val *int32, max float32, label string, rect *rl.Rectangle) {
-	s := string(*val)
-	tempVal := float32(*val)
-	rg.Slider(*rect, s, label, &tempVal, 0, max)
-	*val = int32(tempVal)
-}
-
-// draw optimization grid
+// DrawGrid draws grid lines using DetectionRange as the spacing.
+// The spacing must be greater than zero so the loops can finish.
 func DrawGrid() {
 	// x
 	total := int32(simulation.DetectionRange)
