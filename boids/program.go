@@ -83,6 +83,7 @@ func main() {
 	}
 }
 
+// SetBoidsAmount sets the population of boids for the simulation
 func SetBoidsAmount(newAmount int32) {
 	simulation.BoidsAmount = newAmount
 	spawnBoids()

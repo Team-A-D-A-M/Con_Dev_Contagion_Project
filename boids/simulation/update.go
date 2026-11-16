@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// Concurrent UpdateBoids for updating the population
+// Concurrent UpdateBoids for updating the population using a snapshot
 func UpdateBoids(dt float32) {
 	// make a snapshot array of boids with the same length as Boids and copy each *Boid value
 	var snapshot []Boid
