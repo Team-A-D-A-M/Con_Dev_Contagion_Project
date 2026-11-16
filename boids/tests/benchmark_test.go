@@ -76,4 +76,7 @@ func BenchmarkParallel(b *testing.B) {
 	workerCounts := []int{1, 2, 4, 8, 10, 12}
 
 	print(amounts, workerCounts)
+
+	// Use the same random seed as serial benchmark
+	random := rand.New(rand.NewPCG(1, 2))
 }
