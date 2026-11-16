@@ -66,3 +66,14 @@ func BenchmarkSerial(b *testing.B) {
 		})
 	}
 }
+
+// BenchmarkParallel measures concurrent updates for different numbers of boids and worker counts
+// Each update starts from the same saved state
+// Creating, resetting and drawing the boids are not included in the timing
+// TODO Run the parallel benchmark, record the results, run the Serial benchmark (update with the same amount values) and compare the results
+func BenchmarkParallel(b *testing.B) {
+	amounts := []int{1, 10, 25, 50, 100, 500, 1000}
+	workerCounts := []int{1, 2, 4, 8, 10, 12}
+
+	print(amounts, workerCounts)
+}

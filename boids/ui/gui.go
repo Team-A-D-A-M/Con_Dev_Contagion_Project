@@ -52,6 +52,13 @@ func InitGui() {
 	// uses grid
 	rect.Y += sliderSeparation
 	rg.CheckBox(rect, "Use Grid Optimization", &simulation.DoGridOptimize)
+
+	rect.Y += sliderSeparation
+	modeLabel := "Serial Mode"
+	if simulation.IsParallel {
+		modeLabel = "Parallel Mode"
+	}
+	rg.CheckBox(rect, modeLabel, &simulation.IsParallel)
 }
 
 func DrawGUI(SetBoidsAmount func(int32)) {
