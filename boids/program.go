@@ -25,7 +25,7 @@ func main() {
 	// keep updating and drawing until window is closed
 	for !rl.WindowShouldClose() {
 		// Turn off grid optimisation if the detection range is zero.
-		if simulation.DetectionRange == 0 {
+		if simulation.DetectionRange < 1 {
 			simulation.DoGridOptimize = false
 		}
 

@@ -4,26 +4,26 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-// GridCell stores a grid's location
+// GridCell stores a grid's location.
 type GridCell struct {
 	X, Y int
 }
 
-// Boid stores a boid's position, velocity and location
+// Boid stores a boid's position, velocity and location.
 type Boid struct {
-	Position rl.Vector2
-	Velocity rl.Vector2
-	GridCell GridCell
+	Position rl.Vector2 // position of the boid on screen
+	Velocity rl.Vector2 // the boid's movement every frame
+	GridCell GridCell   // Which cell in the optimization grid does the boid occupy
 }
 
-// NearbyBoid stores a nearby boid and it's distance
+// NearbyBoid stores a nearby boid and it's distance.
 type NearbyBoid struct {
-	Boid     *Boid
-	Distance float32
+	Boid     *Boid   // the nearby boid that is referenced
+	Distance float32 // the boid's distance from the relevant boid
 }
 
-// Steer towards the average position of nearby boids.
-func boidCohesion(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
+// BoidCohesion returns a value steering a boid towards the average position of nearby boids.
+func BoidCohesion(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	center := rl.Vector2Zero()
 
 	//return no steering when there are no nearby boids
@@ -55,8 +55,8 @@ func boidCohesion(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 }
 
-// Steer away from nearby boids that are too close.
-func boidSeparation(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
+// BoidSeparation returns a value steering a boid away from nearby boids that are too close.
+func BoidSeparation(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	steer := rl.Vector2Zero()
 	count := 0
 
@@ -106,15 +106,15 @@ func boidSeparation(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	return rl.Vector2Zero()
 }
 
-// Steer towards the average velocity of nearby boids.
-func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
+// BoidAlignment returns a value steering a boid towards the average velocity of nearby boids.
+func BoidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
+	// no steering if no nearby boids
 	if len(nearby) == 0 {
 		return rl.Vector2Zero()
-	} //no steering if no nearby boids
-
-	avgVelocity := rl.Vector2Zero()
+	}
 
 	// Add up the nearby boid's velocities
+	avgVelocity := rl.Vector2Zero()
 	for _, n := range nearby {
 		avgVelocity = rl.Vector2Add(avgVelocity, n.Boid.Velocity)
 	}
@@ -140,7 +140,7 @@ func boidAlignment(b *Boid, nearby []*NearbyBoid) rl.Vector2 {
 	return rl.Vector2Subtract(desiredVelocity, b.Velocity)
 }
 
-// BoidAction updates the boid's movement using the 3 flocking rules
+// BoidActionConcurrent updates the boid's movement using the 3 flocking rules in parallel.
 func BoidActionConcurrent(index int, snapshot []Boid, dt float32) Boid {
 	b := snapshot[index]
 
@@ -148,60 +148,13 @@ func BoidActionConcurrent(index int, snapshot []Boid, dt float32) Boid {
 	nearby := getNearbyBoidsConcurrent(index, snapshot)
 
 	// apply the three flocking rules
-	cohesion := boidCohesion(&b, nearby)
-	separation := boidSeparation(&b, nearby)
-	alignment := boidAlignment(&b, nearby)
+	cohesion := BoidCohesion(&b, nearby)
+	separation := BoidSeparation(&b, nearby)
+	alignment := BoidAlignment(&b, nearby)
 
-	boidMovementConcurrent(&b, dt, cohesion, separation, alignment)
-
-	// Update the grid cell for the new position.
-	if DoGridOptimize {
-		updateBoidGrid(&b)
-	}
+	BoidMovement(&b, dt, cohesion, separation, alignment)
 
 	return b
-}
-
-// function with extracted common code for boid action used by parallel and serial versions
-func boidMovementConcurrent(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector2, alignment rl.Vector2) {
-	// Multiply each rule by its weight and add the results.
-	steering := rl.Vector2Add(
-		rl.Vector2Scale(cohesion, CohesionValue),
-		rl.Vector2Add(
-			rl.Vector2Scale(separation, SeparationValue),
-			rl.Vector2Scale(alignment, AlignmentValue),
-		),
-	)
-
-	// Keep the steering force within MaxForce.
-	steering = limitVector(steering, MaxForce)
-
-	// Change the velocity based on steering and frame time.
-	b.Velocity = rl.Vector2Add(
-		b.Velocity,
-		rl.Vector2Scale(steering, dt),
-	)
-	// Stop the boid from moving faster than MaxSpeed.
-	b.Velocity = limitVector(b.Velocity, MaxSpeed)
-
-	// Move the boid based on its velocity and frame time.
-	b.Position = rl.Vector2Add(
-		b.Position,
-		rl.Vector2Scale(b.Velocity, dt),
-	)
-
-	// Move boids crossing the left or right edge to the opposite side.
-	if b.Position.X < 0.0 {
-		b.Position.X += Bounds.Width
-	} else if b.Position.X > Bounds.Width {
-		b.Position.X -= Bounds.Width
-	}
-	// Move boids crossing the top or bottom edge to the opposite side.
-	if b.Position.Y < 0.0 {
-		b.Position.Y += Bounds.Height
-	} else if b.Position.Y > Bounds.Height {
-		b.Position.Y -= Bounds.Height
-	}
 }
 
 // BoidAction updates the boid's movement using the 3 flocking rules.
@@ -209,14 +162,16 @@ func BoidAction(b *Boid, dt float32) {
 	// Find neighbours within the detection range.
 	nearby := GetNearbyBoids(b)
 
-	// Calculate steering towards the group's centre.
-	cohesion := boidCohesion(b, nearby)
+	// apply the three flocking rules
+	cohesion := BoidCohesion(b, nearby)
+	separation := BoidSeparation(b, nearby)
+	alignment := BoidAlignment(b, nearby)
 
-	// Calculate steering away from boids that are too close.
-	separation := boidSeparation(b, nearby)
+	BoidMovement(b, dt, cohesion, separation, alignment)
+}
 
-	// Calculate steering in the neighbours' average direction.
-	alignment := boidAlignment(b, nearby)
+// BoidMovemement applies a per-frame movement based on the boid's 3 rules results.
+func BoidMovement(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector2, alignment rl.Vector2) {
 
 	// Multiply each rule by its weight and add the results.
 	steering := rl.Vector2Add(
@@ -252,14 +207,14 @@ func BoidAction(b *Boid, dt float32) {
 	}
 }
 
-// updateBoidGrid updates the grid cell containing the boid.
+// UpdateBoidGrid updates the grid cell containing the boid.
 func updateBoidGrid(b *Boid) {
 	// Divide each position coordinate by the cell size and round down.
 	b.GridCell.X = floorDiv(b.Position.X, DetectionRange)
 	b.GridCell.Y = floorDiv(b.Position.Y, DetectionRange)
 }
 
-// Gets nearby boids within detection range for concurrent implementation
+// Gets nearby boids within detection range for concurrent implementation.
 func getNearbyBoidsConcurrent(index int, snapshot []Boid) []*NearbyBoid {
 	nearbyBoids := make([]*NearbyBoid, 0)
 
@@ -294,7 +249,7 @@ func getNearbyBoidsConcurrent(index int, snapshot []Boid) []*NearbyBoid {
 	return nearbyBoids
 }
 
-// getNearbyBoids finds other boids within the detection range.
+// GetNearbyBoids returns an array of other boids within the detection range of a boid.
 func GetNearbyBoids(b *Boid) []*NearbyBoid {
 	// Start with an empty list.
 	nearbyBoids := []*NearbyBoid{}
@@ -329,22 +284,26 @@ func GetNearbyBoids(b *Boid) []*NearbyBoid {
 	return nearbyBoids
 }
 
-// lineLength sets how long the direction line is.
-var lineLength float32 = 24.0
-
-// DrawBoid draws the boid and highlights it when requested.
+// DrawBoid draws the boid and highlights it if set.
 func DrawBoid(b *Boid, highlight bool) {
-	// Use blue unless the boid is highlighted.
+
+	// set the length of the direction line
+	var lineLength float32 = 24.0
+
+	// Use blue unless the boid is highlighted, then use red
 	col := rl.Blue
 	if highlight {
 		col = rl.Red
 	}
 
+	// get boid velocity for drawing the visual shape
 	vel := rl.Vector2Normalize(b.Velocity)
+
 	// Show the highlighted boid's detection range as a circle.
 	if highlight {
 		rl.DrawCircleLines(int32(b.Position.X), int32(b.Position.Y), DetectionRange, rl.LightGray)
 	}
+
 	// Draw a line showing which way the boid is moving.
 	rl.DrawLine(int32(b.Position.X), int32(b.Position.Y), int32(b.Position.X+vel.X*lineLength), int32(b.Position.Y+vel.Y*lineLength), rl.LightGray)
 	// Draw the boid as a triangle facing its movement direction.
@@ -357,6 +316,7 @@ func DrawBoid(b *Boid, highlight bool) {
 	)
 }
 
+// PositionWrap wraps a Vector2 to the opposite end of the screen if it goes out-of-bounds
 func positionWrap(position rl.Vector2) rl.Vector2 {
 	// horizontal wrap
 	if position.X < 0.0 {
