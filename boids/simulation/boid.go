@@ -259,6 +259,7 @@ func updateBoidGrid(b *Boid) {
 	b.GridCell.Y = floorDiv(b.Position.Y, DetectionRange)
 }
 
+// Gets nearby boids within detection range for concurrent implementation
 func getNearbyBoidsConcurrent(index int, snapshot []Boid) []*NearbyBoid {
 	nearbyBoids := make([]*NearbyBoid, 0)
 
