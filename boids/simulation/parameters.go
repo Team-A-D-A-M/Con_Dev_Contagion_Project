@@ -23,4 +23,5 @@ var Boids []*Boid
 // number of worker pools to spawn
 var Workers = 10
 
+// boolean val sets parallel implementation as default
 var IsParallel = true
