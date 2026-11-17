@@ -11,7 +11,7 @@ import (
 // main opens the window and runs the program.
 func main() {
 	// open window with chosen size
-	rl.InitWindow(simulation.ScreenX, simulation.ScreenY, "Boids")
+	rl.InitWindow(simulation.ScreenX+ui.SidebarWidth, simulation.ScreenY, "Boids")
 
 	// close when main ends
 	defer rl.CloseWindow()
@@ -27,6 +27,12 @@ func main() {
 		// Turn off grid optimisation if the detection range is zero.
 		if simulation.DetectionRange < 1 {
 			simulation.DoGridOptimize = false
+		}
+
+		// Press M to switch between free flocking, obstacles and the maze.
+		if rl.IsKeyPressed(rl.KeyM) {
+			simulation.ToggleMap()
+			simulation.RefreshBoidGrid()
 		}
 
 		// Get the frame time in seconds.
@@ -54,6 +60,9 @@ func main() {
 			ui.DrawGrid()
 		}
 
+		// Draw the selected map before drawing the boids.
+		simulation.DrawObstacles()
+
 		for i, b := range simulation.Boids {
 			// Highlight the first boid and print its velocity.
 			if i == 0 {
@@ -65,20 +74,29 @@ func main() {
 			}
 		}
 
-		ui.InitGui()
-		ui.DrawGUI(SetBoidsAmount)
-
 		// stop drawing to texture
 		rl.EndTextureMode()
 
 		// start drawing to screen
 		rl.BeginDrawing()
+		rl.ClearBackground(rl.RayWhite)
 
 		// draw computed texture to screen
-		rl.DrawTextureRec(target.Texture, rl.Rectangle{0.0, 0.0, float32(target.Texture.Width), float32(-target.Texture.Height)}, rl.Vector2{0.0, 0.0}, rl.White)
+		rl.DrawTextureRec(target.Texture, rl.Rectangle{0.0, 0.0, float32(target.Texture.Width), float32(-target.Texture.Height)}, rl.Vector2{float32(ui.SidebarWidth), 0.0}, rl.White)
+
+		// Draw the GUI on the screen so the sidebar can receive mouse input.
+		oldDetectionRange := simulation.DetectionRange
+		oldGridOptimize := simulation.DoGridOptimize
+		ui.InitGui()
+		ui.DrawGUI(SetBoidsAmount)
+
+		// Update grid cells if the detection range or grid setting changes.
+		if simulation.DetectionRange != oldDetectionRange || simulation.DoGridOptimize != oldGridOptimize {
+			simulation.RefreshBoidGrid()
+		}
 
 		// Show the FPS.
-		rl.DrawFPS(simulation.Bounds.ToInt32().Width-120, 20)
+		rl.DrawFPS(ui.SidebarWidth+simulation.Bounds.ToInt32().Width-120, 20)
 		rl.EndDrawing()
 	}
 }
@@ -102,4 +120,7 @@ func spawnBoids() {
 			},
 		)
 	}
+
+	// Move new boids out of any walls and set their grid cells.
+	simulation.PrepareBoidsForMap()
 }

@@ -2,99 +2,252 @@ package ui
 
 import (
 	"boids/simulation"
-	"strconv"
+	"fmt"
 
 	rg "github.com/gen2brain/raylib-go/raygui"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-// rect stores the position and size to draw each control.
-var rect = rl.Rectangle{
-	X:      40,
-	Y:      0,
-	Width:  200,
-	Height: 20,
-}
+const SidebarWidth int32 = 280
+const left float32 = 18
+const sliderWidth float32 = 244
 
-// sliderSeparation sets the vertical space between controls.
-var sliderSeparation float32 = 25.0
-
-// InitGui draws the settings controls and updates simulation values.
+// InitGui draws the fixed sidebar and the seven parameter sliders.
 func InitGui() {
-	rect.Y = 0
+	// Sidebar background.
+	rl.DrawRectangle(
+		0,
+		0,
+		SidebarWidth,
+		simulation.ScreenY,
+		rl.Color{R: 32, G: 43, B: 58, A: 255},
+	)
 
-	// max speed
-	rect.Y += sliderSeparation
-	drawSlider(&simulation.MaxSpeed, 1000, "Max Speed", &rect)
+	// Sidebar title.
+	rl.DrawText("BOIDS", 18, 18, 26, rl.RayWhite)
+	rl.DrawText("SIMULATION CONTROLS", 18, 51, 12, rl.LightGray)
 
-	// max force
-	rect.Y += sliderSeparation
-	drawSlider(&simulation.MaxForce, 200, "Max Force", &rect)
+	// Divider.
+	rl.DrawLine(18, 76, SidebarWidth-18, 76, rl.Gray)
 
-	// detection range
-	rect.Y += sliderSeparation
-	drawSlider(&simulation.DetectionRange, 200, "Detection Range", &rect)
+	// Parameter sliders.
+	y := float32(92)
 
-	// desired separation
-	rect.Y += sliderSeparation
-	drawSlider(&simulation.DesiredSeparation, 200, "Desired Separation", &rect)
+	slider(&simulation.MaxSpeed, 1000, "Max Speed", &y)
+	slider(&simulation.MaxForce, 400, "Max Force", &y)
+	slider(&simulation.DetectionRange, 200, "Detection Range", &y)
+	slider(&simulation.DesiredSeparation, 200, "Desired Separation", &y)
+	slider(&simulation.CohesionValue, 1000, "Cohesion", &y)
+	slider(&simulation.SeparationValue, 1000, "Separation", &y)
+	slider(&simulation.AlignmentValue, 300, "Alignment", &y)
 
-	// cohesion value
-	rect.Y += sliderSeparation
-	drawSlider(&simulation.CohesionValue, 1000, "Cohesion", &rect)
+	// Grid optimisation checkbox.
+	check := rl.Rectangle{
+		X:      left,
+		Y:      y + 3,
+		Width:  18,
+		Height: 18,
+	}
 
-	// separation value
-	rect.Y += sliderSeparation
-	drawSlider(&simulation.SeparationValue, 1000, "Separation", &rect)
+	rg.CheckBox(
+		check,
+		"",
+		&simulation.DoGridOptimize,
+	)
 
-	// alignment value
-	rect.Y += sliderSeparation
-	drawSlider(&simulation.AlignmentValue, 300, "Alignment", &rect)
-
-	// uses grid
-	rect.Y += sliderSeparation
-	rg.CheckBox(rect, "Use Grid Optimization", &simulation.DoGridOptimize)
+	rl.DrawText(
+		"Use Grid Optimization",
+		int32(left+27),
+		int32(y+5),
+		14,
+		rl.RayWhite,
+	)
 
 	// show current mode
-	rect.Y += sliderSeparation
 	modeLabel := "Serial Mode"
 	if simulation.IsParallel {
 		modeLabel = "Parallel Mode"
 	}
-	rg.CheckBox(rect, modeLabel, &simulation.IsParallel)
+	check.Y += 22
+	rg.CheckBox(check, "", &simulation.IsParallel)
+	rl.DrawText(modeLabel, int32(left+27), int32(check.Y+2), 14, rl.RayWhite)
 }
 
-// DrawGUI draws the boid count slider below the controls drawn by InitGui.
-func DrawGUI(SetBoidsAmount func(int32)) {
-	// boids amount
-	s := strconv.Itoa(int(simulation.BoidsAmount))
-	tempVal := float32(simulation.BoidsAmount)
-	rect.Y += sliderSeparation
-	rg.Slider(rect, s, "Amount of Boids", &tempVal, 0, 1000)
-	if int32(tempVal) != simulation.BoidsAmount {
-		SetBoidsAmount(int32(tempVal))
+// DrawGUI draws the boid count slider, map information and team credits.
+func DrawGUI(setBoidsAmount func(int32)) {
+	y := float32(452)
+
+	// Boid count.
+	rl.DrawText(
+		"Amount of Boids",
+		int32(left),
+		int32(y),
+		14,
+		rl.RayWhite,
+	)
+
+	rl.DrawText(
+		fmt.Sprintf("%d", simulation.BoidsAmount),
+		210,
+		int32(y),
+		14,
+		rl.RayWhite,
+	)
+
+	temp := float32(simulation.BoidsAmount)
+
+	rg.Slider(
+		rl.Rectangle{
+			X:      left,
+			Y:      y + 23,
+			Width:  sliderWidth,
+			Height: 16,
+		},
+		"",
+		"",
+		&temp,
+		0,
+		1000,
+	)
+
+	if int32(temp) != simulation.BoidsAmount {
+		setBoidsAmount(int32(temp))
 	}
+
+	// Map switching instructions.
+	rl.DrawRectangle(
+		18,
+		505,
+		244,
+		32,
+		rl.Color{R: 53, G: 70, B: 89, A: 255},
+	)
+
+	rl.DrawText(
+		"M  -  Switch Map",
+		35,
+		514,
+		14,
+		rl.RayWhite,
+	)
+
+	// Current map name.
+	rl.DrawText(
+		simulation.GetMapName(),
+		18,
+		548,
+		12,
+		rl.LightGray,
+	)
+
+	// Team credits divider.
+	rl.DrawLine(
+		18,
+		580,
+		SidebarWidth-18,
+		580,
+		rl.Gray,
+	)
+
+	// Team credits.
+	rl.DrawText(
+		"PROJECT TEAM",
+		18,
+		591,
+		13,
+		rl.LightGray,
+	)
+
+	rl.DrawText(
+		"Dorian  |  Amelia",
+		18,
+		615,
+		15,
+		rl.RayWhite,
+	)
+
+	rl.DrawText(
+		"Mark    |  Adam",
+		18,
+		639,
+		15,
+		rl.RayWhite,
+	)
+
+	rl.DrawText(
+		"SETU  -  Concurrent Development",
+		18,
+		675,
+		10,
+		rl.LightGray,
+	)
 }
 
-// drawSlider draws a float slider from zero to max and shows a rounded value.
-func drawSlider(val *float32, max float32, label string, rect *rl.Rectangle) {
-	s := strconv.FormatFloat(simulation.RoundFloat(float64(*val), 1), 'f', -1, 64)
-	rg.Slider(*rect, s, label, val, 0, max)
+// slider draws a labelled parameter slider.
+func slider(value *float32, max float32, label string, y *float32) {
+	// Parameter label.
+	rl.DrawText(
+		label,
+		int32(left),
+		int32(*y),
+		14,
+		rl.RayWhite,
+	)
+
+	// Current parameter value.
+	valueText := fmt.Sprintf("%.0f", *value)
+
+	rl.DrawText(
+		valueText,
+		SidebarWidth-18-rl.MeasureText(valueText, 14),
+		int32(*y),
+		14,
+		rl.RayWhite,
+	)
+
+	// Slider control.
+	rg.Slider(
+		rl.Rectangle{
+			X:      left,
+			Y:      *y + 22,
+			Width:  sliderWidth,
+			Height: 16,
+		},
+		"",
+		"",
+		value,
+		0,
+		max,
+	)
+
+	*y += 45
 }
 
-// DrawGrid draws grid lines using DetectionRange as the spacing.
-// The spacing must be greater than zero so the loops can finish.
+// DrawGrid draws only within the simulation render texture.
 func DrawGrid() {
-	// x
-	total := int32(simulation.DetectionRange)
-	for total < int32(simulation.Bounds.Width) {
-		rl.DrawLine(total, 0, total, simulation.Bounds.ToInt32().Height, rl.LightGray)
-		total += int32(simulation.DetectionRange)
+	if simulation.DetectionRange <= 0 {
+		return
 	}
-	// y
-	total = int32(simulation.DetectionRange)
-	for total < int32(simulation.Bounds.Height) {
-		rl.DrawLine(0, total, simulation.Bounds.ToInt32().Width, total, rl.LightGray)
-		total += int32(simulation.DetectionRange)
+
+	// Vertical grid lines.
+	for x := simulation.DetectionRange; x < simulation.Bounds.Width; x += simulation.DetectionRange {
+		rl.DrawLine(
+			int32(x),
+			0,
+			int32(x),
+			simulation.ScreenY,
+			rl.LightGray,
+		)
+	}
+
+	// Horizontal grid lines.
+	for y := simulation.DetectionRange; y < simulation.Bounds.Height; y += simulation.DetectionRange {
+		rl.DrawLine(
+			0,
+			int32(y),
+			simulation.ScreenX,
+			int32(y),
+			rl.LightGray,
+		)
 	}
 }
