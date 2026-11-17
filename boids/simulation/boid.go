@@ -185,6 +185,12 @@ func BoidMovement(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector
 	// Keep the steering force within MaxForce.
 	steering = limitVector(steering, MaxForce)
 
+	// Give obstacle avoidance priority when the boid is heading towards a wall.
+	steering = applyObstacleSteering(b, steering)
+
+	// Save the position before moving so collisions can be checked along the path.
+	previous := b.Position
+
 	// Change the velocity based on steering and frame time.
 	b.Velocity = rl.Vector2Add(
 		b.Velocity,
@@ -198,6 +204,9 @@ func BoidMovement(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector
 		b.Position,
 		rl.Vector2Scale(b.Velocity, dt),
 	)
+
+	// Stop the boid from moving through an obstacle before wrapping the position.
+	ResolveObstacleCollision(b, previous)
 
 	b.Position = positionWrap(b.Position)
 
