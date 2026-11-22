@@ -1,10 +1,11 @@
+// simulation package implements boid flocking behavior and updates the simulation state.
 package simulation
 
 import (
 	"sync"
 )
 
-// Concurrent UpdateBoids for updating the population using a snapshot
+// UpdateBoids Concurrently for the population using a snapshot
 func UpdateBoids(dt float32) {
 	// make a snapshot array of boids with the same length as Boids and copy each *Boid value
 	var snapshot []Boid

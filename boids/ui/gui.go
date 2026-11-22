@@ -1,3 +1,4 @@
+// ui package initialises and draws all UI elements, including menu controls, boids and grid cells
 package ui
 
 import (
@@ -82,8 +83,7 @@ func drawSlider(val *float32, max float32, label string, rect *rl.Rectangle) {
 	rg.Slider(*rect, s, label, val, 0, max)
 }
 
-// DrawGrid draws grid lines using DetectionRange as the spacing.
-// The spacing must be greater than zero so the loops can finish.
+// DrawGrid draws grid lines using DetectionRange as the spacing. The spacing must be greater than zero so the loops can finish.
 func DrawGrid() {
 	// x
 	total := int32(simulation.DetectionRange)
