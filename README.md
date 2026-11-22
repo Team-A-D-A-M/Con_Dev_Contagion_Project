@@ -57,6 +57,7 @@ Results and findings: to be put in documentation
 
 ## Technologies Used
 - GoLang
+- Raylib with Golang bindings
 
 
 
