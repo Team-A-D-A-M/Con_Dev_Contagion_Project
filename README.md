@@ -23,8 +23,12 @@ cd boids
 go run .
 ```
 
-[//]: # (TODO)
-[//]: # (## Project files)
+## Project Files
+- `boids/program.go`: starts the simulation and draws each frame
+- `boids/simulation`: covers boid behaviour, settings and environment
+- `boids/ui`: displays simulation controls and grid 
+- `boids/tests`: detection range tests and performance benchmarks
+- `Documentation`: project images and documentation
 
 ## Tests
 - **Detection range:** checks boids inside, exactly at and outside the range.
