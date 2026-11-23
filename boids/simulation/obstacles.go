@@ -13,11 +13,13 @@ const (
 	MapMaze
 )
 
+// Obstacle defines a circular barrier by its centre and radius.
 type Obstacle struct {
 	Position rl.Vector2
 	Radius   float32
 }
 
+// RectObstacle defines an axis-aligned wall by its bounds.
 type RectObstacle struct {
 	Bounds rl.Rectangle
 }
@@ -25,6 +27,7 @@ type RectObstacle struct {
 // Start with no map, so the boids can flock freely.
 var CurrentMap = MapNone
 
+// ToggleMap cycles through the maps and moves boids clear of newly active obstacles.
 func ToggleMap() {
 	CurrentMap = (CurrentMap + 1) % 3
 
@@ -36,6 +39,7 @@ func ToggleMap() {
 	}
 }
 
+// GetMapName returns the active map label shown in the interface.
 func GetMapName() string {
 	switch CurrentMap {
 	case MapNone:
@@ -98,6 +102,7 @@ var MazeObstacles = []RectObstacle{
 	{Bounds: rl.Rectangle{X: 850, Y: 564, Width: 24, Height: 47}},
 }
 
+// activeRects returns the rectangular barriers for the active map.
 func activeRects() []RectObstacle {
 	switch CurrentMap {
 	case MapObstacles:
@@ -109,6 +114,7 @@ func activeRects() []RectObstacle {
 	}
 }
 
+// DrawObstacles draws the barriers for the active map.
 func DrawObstacles() {
 	switch CurrentMap {
 	case MapNone:
@@ -128,6 +134,7 @@ func DrawObstacles() {
 	}
 }
 
+// drawMaze draws the maze walls and marks the entrance and exit.
 func drawMaze() {
 	// Draw ALL shadows first, then ALL walls, so connected joints look solid.
 	shadow := rl.Color{R: 15, G: 23, B: 38, A: 165}
@@ -156,6 +163,7 @@ func drawMaze() {
 	rl.DrawText("OUT", 647, 645, 15, rl.LightGray)
 }
 
+// clamp keeps a value between the given limits.
 func clamp(x, lo, hi float32) float32 {
 	if x < lo {
 		return lo
@@ -166,28 +174,42 @@ func clamp(x, lo, hi float32) float32 {
 	return x
 }
 
-func dot(a, b rl.Vector2) float32            { return a.X*b.X + a.Y*b.Y }
-func sub(a, b rl.Vector2) rl.Vector2         { return rl.Vector2Subtract(a, b) }
-func add(a, b rl.Vector2) rl.Vector2         { return rl.Vector2Add(a, b) }
+// dot returns the dot product of two vectors.
+func dot(a, b rl.Vector2) float32 { return a.X*b.X + a.Y*b.Y }
+
+// sub subtracts the second vector from the first.
+func sub(a, b rl.Vector2) rl.Vector2 { return rl.Vector2Subtract(a, b) }
+
+// add returns the sum of two vectors.
+func add(a, b rl.Vector2) rl.Vector2 { return rl.Vector2Add(a, b) }
+
+// mul scales a vector by the given factor.
 func mul(a rl.Vector2, k float32) rl.Vector2 { return rl.Vector2Scale(a, k) }
-func length(a rl.Vector2) float32            { return a.Length() }
+
+// length returns the magnitude of a vector.
+func length(a rl.Vector2) float32 { return a.Length() }
+
+// unit returns a direction of length one, using the positive X axis for tiny vectors.
 func unit(a rl.Vector2) rl.Vector2 {
 	if length(a) < 0.0001 {
 		return rl.Vector2{X: 1}
 	}
 	return rl.Vector2Normalize(a)
 }
+
+// closestRect finds the closest point on or inside the rectangle.
 func closestRect(p rl.Vector2, r rl.Rectangle) rl.Vector2 {
 	return rl.Vector2{X: clamp(p.X, r.X, r.X+r.Width), Y: clamp(p.Y, r.Y, r.Y+r.Height)}
 }
 
-// A negative signed distance means the boid is inside a solid shape.
+// circleSurface returns the outward normal and signed distance to a circle.
 func circleSurface(p rl.Vector2, o Obstacle) (rl.Vector2, float32) {
 	v := sub(p, o.Position)
 	d := length(v)
 	return unit(v), d - o.Radius
 }
 
+// rectSurface returns the outward normal and signed distance to a rectangle.
 func rectSurface(p rl.Vector2, r rl.Rectangle) (rl.Vector2, float32) {
 	q := closestRect(p, r)
 	v := sub(p, q)
@@ -217,6 +239,7 @@ func rectSurface(p rl.Vector2, r rl.Rectangle) (rl.Vector2, float32) {
 	return n, -m
 }
 
+// nearestSurface finds the nearest active obstacle surface and its outward normal.
 func nearestSurface(p rl.Vector2) (rl.Vector2, float32) {
 	if CurrentMap == MapNone {
 		return rl.Vector2Zero(), float32(math.MaxFloat32)
@@ -241,10 +264,46 @@ func nearestSurface(p rl.Vector2) (rl.Vector2, float32) {
 	return normal, best
 }
 
-// Look ahead to steer around walls rather than through them.
+// mazeCornerDirection finds an exit direction when two nearby wall faces meet.
+func mazeCornerDirection(p rl.Vector2) rl.Vector2 {
+	const reach = 22
+	var outward rl.Vector2
+	for _, wall := range MazeObstacles {
+		r := wall.Bounds
+		// Only count faces alongside the boid. A lone wall tip has space on both sides.
+		if p.Y >= r.Y && p.Y <= r.Y+r.Height {
+			if gap := p.X - (r.X + r.Width); gap >= 0 && gap < reach {
+				outward.X = 1
+			} else if gap := r.X - p.X; gap >= 0 && gap < reach {
+				outward.X = -1
+			}
+		}
+		if p.X >= r.X && p.X <= r.X+r.Width {
+			if gap := p.Y - (r.Y + r.Height); gap >= 0 && gap < reach {
+				outward.Y = 1
+			} else if gap := r.Y - p.Y; gap >= 0 && gap < reach {
+				outward.Y = -1
+			}
+		}
+	}
+	if outward.X != 0 && outward.Y != 0 {
+		return unit(outward)
+	}
+	return rl.Vector2Zero()
+}
+
+// obstacleAvoidance looks ahead and steers the boid around nearby obstacles.
 func obstacleAvoidance(b *Boid) rl.Vector2 {
 	if CurrentMap == MapNone {
 		return rl.Vector2Zero()
+	}
+
+	// Two walls can cancel both velocity components, so check corners even at rest.
+	if CurrentMap == MapMaze {
+		escape := mazeCornerDirection(b.Position)
+		if escape != (rl.Vector2{}) {
+			return sub(mul(escape, MaxSpeed), b.Velocity)
+		}
 	}
 
 	speed := length(b.Velocity)
@@ -281,8 +340,7 @@ func obstacleAvoidance(b *Boid) rl.Vector2 {
 	return mul(sub(mul(unit(desired), MaxSpeed), b.Velocity), urgency)
 }
 
-// Correct any overlap with a wall, using swept steps so boids cannot
-// jump through thin walls at high speeds.
+// ResolveObstacleCollision moves a boid along its swept path and removes motion into walls.
 func ResolveObstacleCollision(b *Boid, previous rl.Vector2) {
 	if CurrentMap == MapNone {
 		return
