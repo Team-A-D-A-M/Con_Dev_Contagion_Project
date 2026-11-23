@@ -170,7 +170,7 @@ func BoidAction(b *Boid, dt float32) {
 	BoidMovement(b, dt, cohesion, separation, alignment)
 }
 
-// BoidMovemement applies a per-frame movement based on the boid's 3 rules results.
+// BoidMovement applies a per-frame movement based on the boid's 3 rules results.
 func BoidMovement(b *Boid, dt float32, cohesion rl.Vector2, separation rl.Vector2, alignment rl.Vector2) {
 
 	// Multiply each rule by its weight and add the results.
@@ -325,7 +325,7 @@ func DrawBoid(b *Boid, highlight bool) {
 	)
 }
 
-// PositionWrap wraps a Vector2 to the opposite end of the screen if it goes out-of-bounds
+// positionWrap wraps a Vector2 to the opposite end of the screen if it goes out-of-bounds
 func positionWrap(position rl.Vector2) rl.Vector2 {
 	// horizontal wrap
 	if position.X < 0.0 {

@@ -1,3 +1,4 @@
+// ui package initialises and draws all UI elements, including menu controls, boids and grid cells
 package ui
 
 import (
@@ -223,7 +224,7 @@ func slider(value *float32, max float32, label string, y *float32) {
 	*y += 45
 }
 
-// DrawGrid draws only within the simulation render texture.
+// DrawGrid draws grid lines using DetectionRange as the spacing. The spacing must be greater than zero so the loops can finish.
 func DrawGrid() {
 	if simulation.DetectionRange <= 0 {
 		return
