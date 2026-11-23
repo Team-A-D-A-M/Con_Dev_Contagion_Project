@@ -28,7 +28,7 @@ go run .
 - `boids/simulation`: covers boid behaviour, settings and environment
 - `boids/ui`: displays simulation controls and grid 
 - `boids/tests`: detection range tests and performance benchmarks
-- `Documentation`: project images and documentation
+- `Documentation`: project images and documentation, jupyter notebooks that run and analyse the benchmark tests
 
 ## Tests
 - **Detection range:** checks boids inside, exactly at and outside the range.
@@ -42,7 +42,7 @@ go test ./tests -v
 - Adam:
 - Dorian:
 - Amelia:
-- Mark: Handled project architecture, parallelism and contributed to GoDoc
+- Mark: Handled project architecture, parallelism, plotting serial test results and contributed to GoDoc
 
 ## Benchmarks
 Measures the time to run the three flocking rules and calculate each bird's next movement. Tests use 100, 500 and 1000 birds.
@@ -64,6 +64,7 @@ Results and findings: to be put in documentation
 ## Technologies Used
 - GoLang
 - Raylib with Golang bindings
+- Jupyter Notebooks, matplotlib for analysing benchmark tests
 
 
 
