@@ -38,6 +38,12 @@ From the `boids` folder, run:
 go test ./tests -v
 ```
 
+## Contributions
+- Adam:
+- Dorian:
+- Amelia:
+- Mark: Handled project architecture, parallelism and contributed to GoDoc
+
 ## Benchmarks
 Measures the time to run the three flocking rules and calculate each bird's next movement. Tests use 100, 500 and 1000 birds.
 
