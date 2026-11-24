@@ -12,7 +12,7 @@ The current 2D simulation is in the `boids` folder, split into two packages:
 
 ## Installation Guide
 1. Clone the repository:  
-   ``` git clone https://github.com/amelia720/Con_Dev_Contagion_Project.git```
+   ``` git clone https://github.com/Team-A-D-A-M/Con_Dev_Contagion_Project.git```
 2. Navigate to folder:   
    ```cd Con_Dev_Contagion_Project```
 ## How to Run
@@ -59,13 +59,13 @@ Each case runs five times, with 100 flock updates per run. Results were collecte
 
 | Boids | Serial | Parallel: 1 worker | Parallel: 2 workers | Parallel: 4 workers | Parallel: 8 workers | Parallel: 10 workers |
 |---:|---:|---:|---:|---:|---:|---:|
-| 25 | **0.0126** | 0.0216 | 0.0184 | 0.0194 | 0.0214 | 0.0189 |
-| 50 | 0.0676 | 0.0681 | 0.0419 | **0.0358** | 0.0386 | 0.0422 |
-| 100 | 0.2184 | 0.2505 | 0.1415 | **0.1032** | 0.1048 | 0.1088 |
-| 500 | 4.9378 | 4.9500 | 2.9558 | **2.3857** | 2.6115 | 2.7108 |
-| 1000 | 19.3111 | 19.6376 | 12.0778 | **10.3458** | 13.4403 | 15.0843 |
+| 25 | **0.0123** | 0.0182 | 0.0126 | 0.0152 | 0.0165 | 0.0157 |
+| 50 | 0.0704 | 0.0652 | 0.0391 | **0.0309** | 0.0344 | 0.0356 |
+| 100 | 0.2078 | 0.2352 | 0.1483 | **0.1098** | 0.1259 | 0.1245 |
+| 500 | 5.1581 | 5.8250 | 3.3775 | **2.9472** | 3.4078 | 3.1867 |
+| 1000 | 21.2251 | 24.0790 | 14.0662 | **11.1900** | 15.8381 | 13.5273 |
 
-See [BenchmarkResults.md](Documentation/BenchmarkResults.md) for the full benchmark output from all five runs.
+See [BenchmarkResults.md](Documentation/BenchmarkResults.md) for the full benchmark output.
 
 ### Speed-up and Efficiency
 
@@ -75,18 +75,18 @@ See [BenchmarkResults.md](Documentation/BenchmarkResults.md) for the full benchm
 
 **Note:** We calculated absolute speed-up by dividing the serial median time by the best parallel median time: 2 workers for 25 boids and 4 workers for every larger flock.
 
-| Boids | Serial (ns/op) | Parallel: 1 worker (ns/op) | Fastest parallel median (ns/op) | Workers in fastest run | Absolute speed-up | Relative speed-up | Absolute efficiency | Relative efficiency |
+| Boids | Serial (ns/op) | Parallel: 1 worker (ns/op) | Lowest parallel median (ns/op) | Parallel workers | Absolute speed-up | Relative speed-up | Absolute efficiency | Relative efficiency |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 25 | 12,577 | 21,599 | 18,415 | 2 | 0.68× | 1.17× | 34.1% | 58.6% |
-| 50 | 67,607 | 68,098 | 35,825 | 4 | 1.89× | 1.90× | 47.2% | 47.5% |
-| 100 | 218,355 | 250,529 | 103,234 | 4 | 2.12× | 2.43× | 52.9% | 60.7% |
-| 500 | 4,937,820 | 4,949,988 | 2,385,662 | 4 | 2.07× | 2.07× | 51.7% | 51.9% |
-| 1000 | 19,311,108 | 19,637,630 | 10,345,751 | 4 | 1.87× | 1.90× | 46.7% | 47.5% |
+| 25 | 12,257 | 18,223 | 12,598 | 2 | 0.97× | 1.45× | 48.6% | 72.3% |
+| 50 | 70,414 | 65,167 | 30,897 | 4 | 2.28× | 2.11× | 57.0% | 52.7% |
+| 100 | 207,789 | 235,158 | 109,791 | 4 | 1.89× | 2.14× | 47.3% | 53.5% |
+| 500 | 5,158,066 | 5,824,954 | 2,947,194 | 4 | 1.75× | 1.98× | 43.8% | 49.4% |
+| 1000 | 21,225,115 | 24,078,982 | 11,190,008 | 4 | 1.90× | 2.15× | 47.4% | 53.8% |
 
 ## Technologies Used
 - GoLang
 - Raylib with Golang bindings
-- Jupyter Notebooks, matplotlib for analysing benchmark tests
+- Jupyter Notebooks, pandas and matplotlib for analysing benchmark tests
 
 
 
