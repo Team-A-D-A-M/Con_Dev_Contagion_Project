@@ -67,6 +67,8 @@ Each case runs five times, with 100 flock updates per run. Results were collecte
 
 See [BenchmarkResults.md](Documentation/BenchmarkResults.md) for the full benchmark output.
 
+See [boid_benchmarks.ipynb](Documentation/boid_benchmarks.ipynb) to run the serial and parallel benchmarks and view the results in Jupyter.
+
 ### Speed-up and Efficiency
 
 - **Absolute speed-up** = serial time ÷ parallel time.
