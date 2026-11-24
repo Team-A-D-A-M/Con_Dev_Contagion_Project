@@ -9,60 +9,21 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+var boidCounts = []int{25, 50, 100, 500, 1000}
+
 // BenchmarkSerial measures serial updates for different numbers of boids.
 // Each update starts from the same saved state.
 // Creating, resetting and drawing the boids are not included in the timing.
 func BenchmarkSerial(b *testing.B) {
-
-	amounts := []int{100, 500, 1000}
-
-	for _, amount := range amounts {
+	for _, amount := range boidCounts {
 		// Convert the boid count to text and run a benchmark with that name.
 		b.Run(strconv.Itoa(amount), func(b *testing.B) {
-			// Create empty list of boid pointers
-			simulation.Boids = []*simulation.Boid{}
-			// Turn off grid optimisation for this first benchmark.
-			simulation.DoGridOptimize = false
-
-			// Use the same random sequence each time the benchmark runs.
-			random := rand.New(rand.NewPCG(1, 2))
-
-			// Create chosen number of boids
-			for range amount {
-				simulation.Boids = append(simulation.Boids, &simulation.Boid{
-					// Start in a random spot within 150 pixels right and down from the centre.
-					Position: rl.Vector2{
-						X: random.Float32()*150 + simulation.Bounds.Width*0.5,
-						Y: random.Float32()*150 + simulation.Bounds.Height*0.5},
-				})
-			}
-
-			// Create a list to hold each boid's starting data.
-			startingBoids := make([]simulation.Boid, len(simulation.Boids))
-
-			// Save each boid's starting data.
-			for i, boid := range simulation.Boids {
-				startingBoids[i] = *boid
-			}
-
-			// Measure updates of all boids.
-			for b.Loop() {
-				// Pause timing while resetting the birds.
-				b.StopTimer()
-
-				// Copy the starting data of each boid back into each boid.
-				for i, boid := range simulation.Boids {
-					*boid = startingBoids[i]
-				}
-
-				// Time only the serial update.
-				b.StartTimer()
-
+			benchmarkFlock(b, amount, func() {
 				// Update each boid one at a time (serially).
 				for _, boid := range simulation.Boids {
 					simulation.BoidAction(boid, 1.0/60.0)
 				}
-			}
+			})
 		})
 	}
 }
@@ -72,11 +33,67 @@ func BenchmarkSerial(b *testing.B) {
 // Creating, resetting and drawing the boids are not included in the timing
 // TODO Run the parallel benchmark, record the results, run the Serial benchmark (update with the same amount values) and compare the results
 func BenchmarkParallel(b *testing.B) {
-	amounts := []int{1, 10, 25, 50, 100, 500, 1000}
-	workerCounts := []int{1, 2, 4, 8, 10, 12}
+	workerCounts := []int{1, 2, 4, 8, 10}
 
-	print(amounts, workerCounts)
+	for _, amount := range boidCounts {
+		// Convert the boid count to text and run a benchmark with that name.
+		b.Run(strconv.Itoa(amount), func(b *testing.B) {
+			for _, workers := range workerCounts {
+				// Run a separate benchmark for each worker count.
+				b.Run(strconv.Itoa(workers)+"_workers", func(b *testing.B) {
+					// Set the number of workers for this benchmark.
+					simulation.Workers = workers
 
-	// Use the same random seed as serial benchmark
+					benchmarkFlock(b, amount, func() {
+						// Update the whole flock using the chosen workers.
+						simulation.UpdateBoids(1.0 / 60.0)
+					})
+				})
+			}
+		})
+	}
+}
+
+// benchmarkFlock sets up the flock and times the update passed in by either benchmark.
+func benchmarkFlock(b *testing.B, amount int, update func()) {
+	// Use a map without obstacles and turn off grid optimisation.
+	simulation.CurrentMap = simulation.MapNone
+	simulation.DoGridOptimize = false
+
+	// Use the same starting positions in both benchmarks.
 	random := rand.New(rand.NewPCG(1, 2))
+	simulation.Boids = make([]*simulation.Boid, amount)
+	startingBoids := make([]simulation.Boid, amount)
+
+	// Create one boid for each slot in the flock.
+	for i := range startingBoids {
+		// Pick a starting position up to 150 pixels right and down from the centre.
+		boid := &simulation.Boid{
+			Position: rl.Vector2{
+				X: random.Float32()*150 + simulation.Bounds.Width*0.5,
+				Y: random.Float32()*150 + simulation.Bounds.Height*0.5,
+			},
+		}
+
+		// Store the pointer to the boid that the benchmark will update.
+		simulation.Boids[i] = boid
+
+		// Copy the boid's starting data so we can reset it before each update.
+		startingBoids[i] = *boid
+	}
+
+	// Repeat the benchmark. Each round measures one update of the whole flock.
+	for b.Loop() {
+		// Pause the timer so resetting the boids doesn't count.
+		b.StopTimer()
+
+		// Restore each boid's saved position and velocity so every round starts the same way.
+		for i, boid := range simulation.Boids {
+			*boid = startingBoids[i]
+		}
+
+		// Resume the timer and run one serial or parallel update.
+		b.StartTimer()
+		update()
+	}
 }
