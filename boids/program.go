@@ -86,7 +86,7 @@ func main() {
 		// Draw the GUI on the screen so the sidebar can receive mouse input.
 		oldDetectionRange := simulation.DetectionRange
 		oldGridOptimize := simulation.DoGridOptimize
-		ui.DrawSliders()
+		ui.DrawSidebar()
 		ui.DrawGUI(SetBoidsAmount)
 
 		// Update grid cells if the detection range or grid setting changes.
