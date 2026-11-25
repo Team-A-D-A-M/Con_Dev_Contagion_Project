@@ -14,7 +14,7 @@ const left float32 = 18
 const sliderWidth float32 = 244
 
 // InitGui draws the fixed sidebar and the seven parameter sliders.
-func InitGui() {
+func DrawSliders() {
 	// Sidebar background.
 	rl.DrawRectangle(
 		0,

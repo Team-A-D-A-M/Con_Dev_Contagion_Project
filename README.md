@@ -39,7 +39,7 @@ go test ./tests/boids_test.go -v
 ```
 
 ## Contributions
-- Adam:
+- Adam: Built main flocking simulation logic, built initial view and prototype GUI, contribution to GoDoc
 - Dorian:
 - Amelia: Benchmark tests and results, detection range tests and contribution to GoDoc
 - Mark: Handled project architecture, parallelism, plotting serial test results and contributed to GoDoc

@@ -67,7 +67,6 @@ func main() {
 			// Highlight the first boid and print its velocity.
 			if i == 0 {
 				simulation.DrawBoid(b, true)
-				//fmt.Println(b.Velocity)
 			} else {
 				// Draw the rest normally.
 				simulation.DrawBoid(b, false)
@@ -87,7 +86,7 @@ func main() {
 		// Draw the GUI on the screen so the sidebar can receive mouse input.
 		oldDetectionRange := simulation.DetectionRange
 		oldGridOptimize := simulation.DoGridOptimize
-		ui.InitGui()
+		ui.DrawSliders()
 		ui.DrawGUI(SetBoidsAmount)
 
 		// Update grid cells if the detection range or grid setting changes.
