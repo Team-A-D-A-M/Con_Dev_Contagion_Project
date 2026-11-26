@@ -40,7 +40,7 @@ go test ./tests/boids_test.go -v
 
 ## Contributions
 - Adam: Built main flocking simulation logic, built initial view and prototype GUI, contribution to GoDoc
-- Dorian:
+- Dorian: Built Obstacle and Maze map, Improved boids collision avoidance, polished GUI
 - Amelia: Benchmark tests and results, detection range tests and contribution to GoDoc
 - Mark: Handled project architecture, parallelism, plotting serial test results and contributed to GoDoc
 
